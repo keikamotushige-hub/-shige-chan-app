@@ -2,100 +2,191 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHIGE-CHAN Driver Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SHIGE-CHAN System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
-<body class="bg-slate-100 pb-20">
+<body class="bg-slate-50 text-slate-900 font-sans">
 
-    <!-- ナビゲーション -->
-    <nav class="bg-white p-4 shadow-sm sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="text-xl font-black text-orange-600">SHIGE-CHAN</h1>
-        <div id="status-badge" class="text-[10px] font-bold bg-slate-100 px-3 py-1 rounded-full">モード切替待ち</div>
-    </nav>
+    <section id="view-login" class="view active min-h-screen flex flex-col items-center justify-center p-6 bg-slate-900">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-black text-orange-500 tracking-tighter">SHIGE-CHAN</h1>
+            <p class="text-slate-400 text-xs mt-2 font-bold uppercase tracking-widest">Security Portal</p>
+        </div>
+        <div class="w-full max-w-xs space-y-4">
+            <button onclick="login('user')" class="w-full py-5 bg-white text-slate-900 font-black rounded-2xl shadow-xl flex items-center justify-center gap-3">
+                <i class="fa-solid fa-user"></i> お客様として利用
+            </button>
+            <button onclick="login('staff')" class="w-full py-5 bg-orange-500 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-3">
+                <i class="fa-solid fa-bicycle"></i> 代行スタッフログイン
+            </button>
+            <button onclick="login('admin')" class="w-full py-3 text-slate-500 font-bold text-[10px] hover:text-orange-400">
+                <i class="fa-solid fa-lock"></i> 管理者ログイン
+            </button>
+        </div>
+    </section>
 
-    <main class="max-w-md mx-auto p-4 space-y-6">
-        
-        <!-- 管理者ダッシュボード -->
-        <section id="admin-view" class="hidden space-y-4">
-            <div class="bg-slate-900 p-6 rounded-2xl text-white">
-                <h2 class="text-sm font-bold opacity-50">管理者ダッシュボード (shigeme117@yahoo.co.jp)</h2>
-                <p class="text-3xl font-black mt-2">案件・申請管理</p>
-            </div>
-            <div id="admin-list" class="space-y-3">
-                <!-- 注文や申請がリアルタイムでリストアップ -->
-            </div>
-        </section>
+    <div id="app-container" class="hidden min-h-screen">
+        <nav class="bg-white border-b sticky top-0 z-50 p-4 flex justify-between items-center shadow-sm">
+            <span class="font-black text-orange-600">SHIGE-CHAN</span>
+            <button onclick="logout()" class="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full uppercase">Logout</button>
+        </nav>
 
-        <!-- ドライバー（代行者）向け：案件一覧 -->
-        <section id="driver-view" class="space-y-4">
-            <h2 class="font-black text-slate-800">付近の案件（Uber方式）</h2>
-            <div id="job-board" class="space-y-3">
-                <!-- 注文が入るとここに案件が出現 -->
-                <p class="text-xs text-slate-400">現在、新しい案件はありません</p>
-            </div>
-        </section>
+        <main class="max-w-md mx-auto p-4 pb-20">
+            
+            <section id="view-user" class="view space-y-6">
+                <div class="bg-orange-500 p-6 rounded-3xl text-white shadow-lg">
+                    <h2 class="text-xl font-black">新規オーダー</h2>
+                    <p class="text-[10px] opacity-70 mb-4">他の利用者からは見えませんのでご安心ください</p>
+                    <input type="text" id="order-item" placeholder="依頼内容（例：洗濯代行）" class="w-full p-4 bg-white/20 rounded-2xl border-2 border-white/30 text-white placeholder:text-white/50 mb-3 outline-none">
+                    <button onclick="placeOrder()" class="w-full bg-white text-orange-600 font-black py-4 rounded-2xl shadow-md active:scale-95">注文を確定する</button>
+                </div>
+                <div>
+                    <h3 class="font-black text-sm mb-3"><i class="fa-solid fa-clock-rotate-left mr-2"></i>あなたの注文履歴</h3>
+                    <div id="user-orders" class="space-y-3 text-slate-400 text-xs text-center py-10 bg-white rounded-2xl border border-dashed">
+                        注文履歴はありません
+                    </div>
+                </div>
+            </section>
 
-        <!-- お客様用：注文フォーム -->
-        <section id="user-view" class="bg-white p-6 rounded-3xl shadow-sm">
-            <h2 class="font-black mb-4">新規注文</h2>
-            <input type="text" id="u-name" placeholder="お名前" class="w-full p-3 bg-slate-50 rounded-xl mb-2">
-            <button onclick="postJob()" class="w-full bg-orange-500 text-white font-black py-4 rounded-xl">注文を出す</button>
-        </section>
-    </main>
+            <section id="view-staff" class="view space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="font-black text-lg">案件ボード <span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded ml-2">募集中</span></h2>
+                </div>
+                <div id="staff-board" class="space-y-4">
+                    </div>
+            </section>
+
+            <section id="view-admin" class="view space-y-6">
+                <div class="bg-slate-900 p-6 rounded-3xl text-white">
+                    <p class="text-[10px] opacity-50 font-bold uppercase">Master Control</p>
+                    <p class="text-xs mt-1">shigeme117@yahoo.co.jp</p>
+                    <div class="mt-4 pt-4 border-t border-white/10 flex justify-between">
+                        <div><p class="text-[9px] opacity-50">Total Sales</p><p id="adm-sales" class="text-xl font-black text-orange-400">¥0</p></div>
+                        <div><p class="text-[9px] opacity-50">Orders</p><p id="adm-count" class="text-xl font-black">0</p></div>
+                    </div>
+                </div>
+                <h3 class="font-black text-sm">全注文ログ・ステータス管理</h3>
+                <div id="admin-all-list" class="space-y-3"></div>
+            </section>
+        </main>
+    </div>
 
     <script>
-        let db = { jobs: [], requests: [] };
+        // 擬似データベース
+        let db = { orders: [], currentUser: null, role: null };
 
-        // 注文を発行する (客)
-        function postJob() {
-            const name = document.getElementById('u-name').value;
-            if(!name) return;
-            const job = { id: Date.now(), name, status: '募集中' };
-            db.jobs.push(job);
+        function login(role) {
+            if(role === 'admin') {
+                const pw = prompt("管理者パスワードを入力してください");
+                if(pw !== '117') return alert("認証失敗");
+            }
+            if(role === 'staff') {
+                const id = prompt("スタッフIDを入力してください");
+                if(!id) return;
+            }
+
+            db.role = role;
+            document.getElementById('view-login').classList.remove('active');
+            document.getElementById('app-container').classList.remove('hidden');
             
-            // 管理者とドライバー双方へ通知シミュレーション
-            alert("管理者および全ドライバーに案件を通知しました！");
-            updateViews();
+            showView(role);
         }
 
-        // 案件を受ける (ドライバー)
-        function acceptJob(id) {
-            const job = db.jobs.find(j => j.id === id);
-            job.status = '対応中';
-            alert("案件を受注しました！作業を開始してください。");
-            updateViews();
+        function showView(role) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + role).classList.add('active');
+            render();
         }
 
-        // 画面更新 (全画面)
-        function updateViews() {
-            // ドライバー向け案件リスト
-            const board = document.getElementById('job-board');
-            board.innerHTML = db.jobs.map(j => `
-                <div class="bg-white p-4 rounded-2xl shadow border-l-4 ${j.status === '募集中' ? 'border-green-500' : 'border-slate-300'}">
-                    <p class="font-black">${j.name} 様からの依頼</p>
-                    <p class="text-xs text-slate-500">ステータス: ${j.status}</p>
-                    ${j.status === '募集中' ? `<button onclick="acceptJob(${j.id})" class="mt-2 w-full bg-slate-800 text-white py-2 rounded-lg text-sm font-bold">この案件を受ける</button>` : ''}
-                </div>
-            `).join('');
-
-            // 管理者リスト
-            const adminList = document.getElementById('admin-list');
-            adminList.innerHTML = db.jobs.map(j => `
-                <div class="bg-white p-4 rounded-xl shadow">
-                    <p class="text-sm font-bold">依頼者: ${j.name} / 状況: ${j.status}</p>
-                </div>
-            `).join('');
+        function logout() {
+            db.role = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('view-login').classList.add('active');
         }
 
-        // 初期起動
-        function init() {
-            const mode = prompt("ログインモード選択: [admin / driver / user]");
-            if(mode === 'admin') document.getElementById('admin-view').classList.remove('hidden');
-            if(mode === 'driver') document.getElementById('driver-view').classList.remove('hidden');
-            if(mode === 'user') document.getElementById('user-view').classList.remove('hidden');
+        // 注文アクション
+        function placeOrder() {
+            const item = document.getElementById('order-item').value;
+            if(!item) return alert("内容を入力してください");
+            
+            const newOrder = {
+                id: 'ORD-' + Date.now(),
+                user: 'GuestUser', // 本来はログインユーザーID
+                content: item,
+                status: '募集中',
+                price: 3500,
+                time: new Date().toLocaleString('ja-JP')
+            };
+            db.orders.push(newOrder);
+            document.getElementById('order-item').value = '';
+            alert("注文が完了しました。スタッフの対応をお待ちください。");
+            render();
         }
-        init();
+
+        // スタッフが受注
+        function takeJob(id) {
+            const order = db.orders.find(o => o.id === id);
+            order.status = '対応中';
+            alert("案件を受注しました。お客様へ向かってください。");
+            render();
+        }
+
+        // 画面描画（ここで権限ごとにフィルタリング）
+        function render() {
+            if(db.role === 'user') {
+                const container = document.getElementById('user-orders');
+                const myOrders = db.orders; // 本来はUserIDでフィルタ
+                container.innerHTML = myOrders.length ? myOrders.map(o => `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-left">
+                        <div class="flex justify-between items-start">
+                            <p class="font-black text-sm">${o.content}</p>
+                            <span class="text-[9px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-black">${o.status}</span>
+                        </div>
+                        <p class="text-[9px] text-slate-400 mt-2">${o.id} | ${o.time}</p>
+                    </div>
+                `).join('') : '注文履歴はありません';
+            }
+
+            if(db.role === 'staff') {
+                const container = document.getElementById('staff-board');
+                const jobs = db.orders.filter(o => o.status === '募集中');
+                container.innerHTML = jobs.length ? jobs.map(o => `
+                    <div class="bg-white p-5 rounded-3xl shadow-md border-l-8 border-orange-500">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">${o.id}</p>
+                        <p class="font-black text-lg mt-1">${o.content}</p>
+                        <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-location-dot mr-1"></i> 指定先へ移動</p>
+                        <button onclick="takeJob('${o.id}')" class="mt-4 w-full bg-slate-900 text-white font-black py-3 rounded-xl active:scale-95">この案件を引き受ける</button>
+                    </div>
+                `).join('') : '<p class="text-center text-slate-400 py-20 text-xs italic">現在、募集中の案件はありません</p>';
+            }
+
+            if(db.role === 'admin') {
+                const container = document.getElementById('admin-all-list');
+                document.getElementById('adm-sales').innerText = "¥" + (db.orders.length * 3500).toLocaleString();
+                document.getElementById('adm-count').innerText = db.orders.length;
+                
+                container.innerHTML = db.orders.map(o => `
+                    <div class="bg-white p-4 rounded-xl border flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400">${o.id}</p>
+                            <p class="text-xs font-black">${o.content}</p>
+                            <p class="text-[9px] text-blue-500">${o.status}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-sm text-orange-600">¥3,500</p>
+                            <button class="text-[8px] bg-slate-100 px-2 py-1 rounded mt-1">詳細</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
     </script>
 </body>
 </html>
