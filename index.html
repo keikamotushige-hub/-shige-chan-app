@@ -2,270 +2,100 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SHIGE-CHAN Biz Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHIGE-CHAN Driver Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .tab-active { border-bottom: 3px solid #f97316; color: #f97316; font-weight: 900; }
-    </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-100 pb-20">
 
-    <!-- 1. 統合ログイン画面 (最初に表示) -->
-    <section id="page-login" class="page active min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-orange-500 to-red-600">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl space-y-6 text-center">
-            <h1 class="text-3xl font-black text-orange-600 tracking-tighter">SHIGE-CHAN</h1>
-            <p class="text-xs font-bold text-slate-400">ログイン / 新規登録</p>
-            <div class="space-y-3">
-                <input type="email" id="login-email" placeholder="メールアドレス" class="w-full p-4 bg-slate-100 rounded-2xl border-0 ring-1 ring-slate-200 outline-none">
-                <input type="password" placeholder="パスワード" class="w-full p-4 bg-slate-100 rounded-2xl border-0 ring-1 ring-slate-200 outline-none">
-                <p class="text-[9px] text-slate-400">※admin@... でログインすると管理者画面へ</p>
-            </div>
-            <button onclick="handleLogin()" class="w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all">ログイン</button>
-            <div class="flex justify-between text-[10px] font-bold text-orange-500 underline">
-                <span onclick="showPage('crew-reg')">配達員登録</span>
-                <span>パスワードを忘れた</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- 共通ヘッダー (ログイン後) -->
-    <nav id="main-nav" class="hidden bg-white border-b sticky top-0 z-50 p-4 shadow-sm flex justify-between items-center">
-        <h1 class="text-xl font-black text-orange-600" onclick="location.reload()">SHIGE-CHAN</h1>
-        <div id="user-info" class="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full text-slate-500 uppercase">Guest</div>
+    <!-- ナビゲーション -->
+    <nav class="bg-white p-4 shadow-sm sticky top-0 z-50 flex justify-between items-center">
+        <h1 class="text-xl font-black text-orange-600">SHIGE-CHAN</h1>
+        <div id="status-badge" class="text-[10px] font-bold bg-slate-100 px-3 py-1 rounded-full">モード切替待ち</div>
     </nav>
 
-    <main class="max-w-md mx-auto pb-32">
+    <main class="max-w-md mx-auto p-4 space-y-6">
         
-        <!-- 2. お客様用：注文画面 -->
-        <section id="page-user" class="page p-4 space-y-6">
-            <div class="bg-orange-500 rounded-3xl p-6 text-white shadow-xl">
-                <h2 class="text-2xl font-black italic">代行を頼む</h2>
-                <div class="grid grid-cols-2 gap-3 mt-4">
-                    <button onclick="setSvc('laundry', 3500)" id="btn-l" class="bg-white/20 p-4 rounded-2xl border-2 border-white text-center">
-                        <i class="fa-solid fa-shirt text-xl"></i><p class="text-[10px] font-bold mt-1">洗濯代行</p>
-                    </button>
-                    <button onclick="setSvc('reserve', 1500)" id="btn-r" class="bg-white/10 p-4 rounded-2xl border-2 border-transparent text-center">
-                        <i class="fa-solid fa-calendar-check text-xl"></i><p class="text-[10px] font-bold mt-1">予約代行</p>
-                    </button>
-                </div>
+        <!-- 管理者ダッシュボード -->
+        <section id="admin-view" class="hidden space-y-4">
+            <div class="bg-slate-900 p-6 rounded-2xl text-white">
+                <h2 class="text-sm font-bold opacity-50">管理者ダッシュボード (shigeme117@yahoo.co.jp)</h2>
+                <p class="text-3xl font-black mt-2">案件・申請管理</p>
             </div>
-
-            <div class="bg-white rounded-3xl p-6 shadow-md border space-y-4">
-                <select id="hotel-list" onchange="autoFillHotel()" class="w-full p-4 bg-orange-50 rounded-2xl border-0 font-bold text-sm">
-                    <option value="">-- ホテル/ゴルフ場を選択 --</option>
-                    <option value="帝国ホテル|東京都千代田区内幸町1-1-1">帝国ホテル</option>
-                    <option value="川越カントリークラブ|埼玉県東松山市大字大谷">川越カントリークラブ</option>
-                    <option value="ホテルサンオーク越谷|埼玉県越谷市赤山町3-163-1">ホテルサンオーク越谷</option>
-                </select>
-                <input type="text" id="hotel-addr" placeholder="住所・部屋番号" class="w-full p-4 bg-slate-50 rounded-2xl border-0 ring-1 ring-slate-200">
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <select id="speed" onchange="calcTotal()" class="p-3 bg-slate-50 rounded-xl font-bold text-xs">
-                        <option value="0">通常配送</option>
-                        <option value="2000">3時間特急 (+¥2000)</option>
-                    </select>
-                    <!-- 予約代行の場合はクレジットのみに自動変更される -->
-                    <select id="pay" class="p-3 bg-slate-50 rounded-xl font-bold text-xs">
-                        <option value="cash">現金払い</option>
-                        <option value="credit">カード決済</option>
-                    </select>
-                </div>
-
-                <div class="p-4 bg-slate-50 rounded-2xl text-[9px] font-bold text-slate-500 border space-y-2">
-                    <p class="text-orange-600 font-black underline">【代行規定】</p>
-                    <p>・洗濯：45L袋1つまで。スーツ・シルク不可。</p>
-                    <p>・予約：飲食店・ゴルフ場等。実費は含まれません。</p>
-                    <p>・キャンセル：スタッフ出発後は100%請求。</p>
-                    <div class="flex items-start gap-2 pt-2 border-t">
-                        <input type="checkbox" id="agree" class="w-4 h-4 accent-orange-600">
-                        <label for="agree" class="leading-tight text-slate-800">上記規約および反社でないことに同意</label>
-                    </div>
-                </div>
-
-                <div class="bg-slate-900 text-white p-5 rounded-2xl flex justify-between items-center shadow-inner">
-                    <span class="text-sm font-bold opacity-70">合計金額</span>
-                    <span id="display-total" class="text-2xl font-black text-orange-400">¥3,500</span>
-                </div>
-                <button onclick="submitOrder()" class="w-full bg-orange-500 text-white font-black py-5 rounded-2xl shadow-lg active:scale-95 text-xl">注文を確定する</button>
+            <div id="admin-list" class="space-y-3">
+                <!-- 注文や申請がリアルタイムでリストアップ -->
             </div>
         </section>
 
-        <!-- 3. 配達員用：業務画面 -->
-        <section id="page-crew" class="page p-4 space-y-6">
-            <div class="bg-slate-800 rounded-3xl p-6 text-white flex justify-between items-center shadow-xl">
-                <div><h2 class="text-xl font-black italic">Partner Menu</h2><p id="crew-status" class="text-[10px] text-green-400">● 稼働中 (現金受取可)</p></div>
-                <div class="text-right"><p class="text-[9px] opacity-50 uppercase font-black">My Balance</p><p id="crew-wallet" class="text-2xl font-black text-orange-400">¥0</p></div>
-            </div>
-
-            <div class="bg-white rounded-3xl p-6 shadow-md border space-y-4 text-center">
-                <p class="text-xs font-black text-slate-400 uppercase">現在の現金所持額</p>
-                <p id="crew-cash" class="text-3xl font-black text-slate-800">¥0 / ¥20,000</p>
-                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div id="cash-bar" class="bg-orange-500 h-full w-0 transition-all"></div>
-                </div>
-                <p class="text-[9px] text-red-500 font-bold">※2万円を超えると現金注文の受付が自動停止します</p>
-            </div>
-
-            <div id="crew-jobs" class="space-y-3">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">付近の依頼 / 完了履歴</p>
+        <!-- ドライバー（代行者）向け：案件一覧 -->
+        <section id="driver-view" class="space-y-4">
+            <h2 class="font-black text-slate-800">付近の案件（Uber方式）</h2>
+            <div id="job-board" class="space-y-3">
+                <!-- 注文が入るとここに案件が出現 -->
+                <p class="text-xs text-slate-400">現在、新しい案件はありません</p>
             </div>
         </section>
 
-        <!-- 4. 管理者用：ダッシュボード -->
-        <section id="page-admin" class="page p-4 space-y-6">
-            <div class="bg-slate-900 rounded-3xl p-6 text-white flex justify-between items-end shadow-2xl">
-                <div><h2 class="text-xl font-black text-orange-500 italic">ADMIN BIZ</h2><p class="text-[9px] opacity-50">SHIGE-CHAN PLATFORM</p></div>
-                <div class="text-right"><p id="admin-sales" class="text-2xl font-black text-green-400">¥0</p></div>
-            </div>
-
-            <div class="flex gap-2 border-b overflow-x-auto no-scrollbar">
-                <button onclick="adminTab('orders')" id="tab-orders" class="tab-active flex-none px-4 py-3 text-xs">注文管理</button>
-                <button onclick="adminTab('crews')" id="tab-crews" class="flex-none px-4 py-3 text-xs text-slate-400">審査・評価</button>
-                <button onclick="adminTab('finance')" id="tab-finance" class="flex-none px-4 py-3 text-xs text-slate-400">収支・領収書</button>
-            </div>
-
-            <div id="admin-sub-orders" class="admin-content space-y-3"></div>
-            <div id="admin-sub-crews" class="admin-content hidden space-y-3"></div>
-            <div id="admin-sub-finance" class="admin-content hidden space-y-4">
-                <div class="bg-white p-4 rounded-2xl border shadow-sm space-y-2">
-                    <p class="text-xs font-black">領収書一括ダウンロード (CSV)</p>
-                    <button class="w-full py-2 bg-slate-800 text-white text-[10px] rounded-lg">領収データ生成</button>
-                </div>
-            </div>
+        <!-- お客様用：注文フォーム -->
+        <section id="user-view" class="bg-white p-6 rounded-3xl shadow-sm">
+            <h2 class="font-black mb-4">新規注文</h2>
+            <input type="text" id="u-name" placeholder="お名前" class="w-full p-3 bg-slate-50 rounded-xl mb-2">
+            <button onclick="postJob()" class="w-full bg-orange-500 text-white font-black py-4 rounded-xl">注文を出す</button>
         </section>
-
     </main>
 
     <script>
-        // --- データ管理 ---
-        let state = {
-            role: 'guest',
-            totalSales: 0,
-            crewWallet: 0,
-            crewCash: 0,
-            cashLimit: 20000,
-            orders: []
-        };
+        let db = { jobs: [], requests: [] };
 
-        // --- ログイン処理 ---
-        function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            document.getElementById('page-login').classList.remove('active');
-            document.getElementById('main-nav').classList.remove('hidden');
+        // 注文を発行する (客)
+        function postJob() {
+            const name = document.getElementById('u-name').value;
+            if(!name) return;
+            const job = { id: Date.now(), name, status: '募集中' };
+            db.jobs.push(job);
             
-            if(email.startsWith('admin')) {
-                state.role = 'admin';
-                document.getElementById('user-info').innerText = 'Administrator';
-                showPage('admin');
-            } else if(email.startsWith('crew')) {
-                state.role = 'crew';
-                document.getElementById('user-info').innerText = 'Partner Crew';
-                showPage('crew');
-            } else {
-                state.role = 'user';
-                document.getElementById('user-info').innerText = 'Customer';
-                showPage('user');
-            }
+            // 管理者とドライバー双方へ通知シミュレーション
+            alert("管理者および全ドライバーに案件を通知しました！");
+            updateViews();
         }
 
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-' + id).classList.add('active');
-            window.scrollTo(0,0);
+        // 案件を受ける (ドライバー)
+        function acceptJob(id) {
+            const job = db.jobs.find(j => j.id === id);
+            job.status = '対応中';
+            alert("案件を受注しました！作業を開始してください。");
+            updateViews();
         }
 
-        // --- お客様機能 ---
-        let currentSvc = 'laundry';
-        function setSvc(type, price) {
-            currentSvc = type;
-            const paySelect = document.getElementById('pay');
-            if(type === 'reserve') {
-                paySelect.value = 'credit';
-                paySelect.disabled = true; // 予約はクレジットのみ
-            } else {
-                paySelect.disabled = false;
-            }
-            document.getElementById('btn-l').style.opacity = type === 'laundry' ? '1' : '0.5';
-            document.getElementById('btn-r').style.opacity = type === 'reserve' ? '1' : '0.5';
-            calcTotal();
+        // 画面更新 (全画面)
+        function updateViews() {
+            // ドライバー向け案件リスト
+            const board = document.getElementById('job-board');
+            board.innerHTML = db.jobs.map(j => `
+                <div class="bg-white p-4 rounded-2xl shadow border-l-4 ${j.status === '募集中' ? 'border-green-500' : 'border-slate-300'}">
+                    <p class="font-black">${j.name} 様からの依頼</p>
+                    <p class="text-xs text-slate-500">ステータス: ${j.status}</p>
+                    ${j.status === '募集中' ? `<button onclick="acceptJob(${j.id})" class="mt-2 w-full bg-slate-800 text-white py-2 rounded-lg text-sm font-bold">この案件を受ける</button>` : ''}
+                </div>
+            `).join('');
+
+            // 管理者リスト
+            const adminList = document.getElementById('admin-list');
+            adminList.innerHTML = db.jobs.map(j => `
+                <div class="bg-white p-4 rounded-xl shadow">
+                    <p class="text-sm font-bold">依頼者: ${j.name} / 状況: ${j.status}</p>
+                </div>
+            `).join('');
         }
 
-        function calcTotal() {
-            const base = currentSvc === 'laundry' ? 3500 : 1500;
-            const speed = parseInt(document.getElementById('speed').value);
-            document.getElementById('display-total').innerText = "¥" + (base + speed).toLocaleString();
+        // 初期起動
+        function init() {
+            const mode = prompt("ログインモード選択: [admin / driver / user]");
+            if(mode === 'admin') document.getElementById('admin-view').classList.remove('hidden');
+            if(mode === 'driver') document.getElementById('driver-view').classList.remove('hidden');
+            if(mode === 'user') document.getElementById('user-view').classList.remove('hidden');
         }
-
-        function autoFillHotel() {
-            const val = document.getElementById('hotel-list').value;
-            if(val) document.getElementById('hotel-addr').value = val.split('|')[1];
-        }
-
-        function submitOrder() {
-            if(!document.getElementById('agree').checked) return alert("規約同意が必要です");
-            const price = parseInt(document.getElementById('display-total').innerText.replace(/[¥,]/g, ''));
-            const method = document.getElementById('pay').value;
-
-            const newOrder = {
-                id: Date.now(),
-                type: currentSvc,
-                price: price,
-                method: method,
-                status: 'pending',
-                time: new Date().toLocaleTimeString()
-            };
-
-            state.orders.push(newOrder);
-            updateAdmin();
-            alert("【注文確定】スタッフへ通知しました。領収書は完了後マイページから発行できます。");
-        }
-
-        // --- 配達員機能 ---
-        function updateCrew(price, method) {
-            if(method === 'cash') {
-                state.crewCash += price;
-                const percent = (state.crewCash / state.cashLimit) * 100;
-                document.getElementById('cash-bar').style.width = Math.min(percent, 100) + '%';
-                document.getElementById('crew-cash').innerText = `¥${state.crewCash.toLocaleString()} / ¥20,000`;
-                if(state.crewCash >= state.cashLimit) {
-                    document.getElementById('crew-status').innerText = "● 現金停止中 (入金してください)";
-                    document.getElementById('crew-status').className = "text-[10px] text-red-500 font-bold";
-                }
-            }
-            state.crewWallet += (price * 0.7); // 手数料30%引き
-            document.getElementById('crew-wallet').innerText = "¥" + Math.floor(state.crewWallet).toLocaleString();
-        }
-
-        // --- 管理者機能 ---
-        function adminTab(tab) {
-            document.querySelectorAll('.admin-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById('admin-sub-' + tab).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'flex-none px-4 py-3 text-xs text-slate-400');
-            document.getElementById('tab-' + tab).className = 'tab-active flex-none px-4 py-3 text-xs';
-        }
-
-        function updateAdmin() {
-            const hist = document.getElementById('admin-sub-orders');
-            hist.innerHTML = '';
-            let sales = 0;
-            state.orders.forEach(o => {
-                sales += o.price;
-                const row = document.createElement('div');
-                row.className = "bg-white p-4 rounded-2xl shadow-sm border-l-4 border-orange-500 flex justify-between";
-                row.innerHTML = `<div><p class="text-[9px] font-black text-slate-400">${o.time}</p><p class="text-sm font-black">${o.type === 'laundry' ? '洗濯' : '予約'}</p><p class="text-[8px] uppercase">${o.method}</p></div><div class="text-right"><p class="text-orange-600 font-black">¥${o.price.toLocaleString()}</p><button onclick="issueReceipt(${o.id})" class="text-[8px] bg-slate-100 px-2 py-1 rounded mt-1">領収書発行</button></div>`;
-                hist.prepend(row);
-            });
-            document.getElementById('admin-sales').innerText = "¥" + sales.toLocaleString();
-        }
-
-        function issueReceipt(id) {
-            alert("領収書(PDF)を生成しました。登録メールアドレスへ送信します。");
-        }
+        init();
     </script>
 </body>
 </html>
