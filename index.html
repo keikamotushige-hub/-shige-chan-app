@@ -1,95 +1,208 @@
 <!DOCTYPE html>
-<html lang="ja" class="scroll-smooth">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHIGE-CHAN | Premium Proxy Service</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SHIGE-CHAN | Premium Security Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/23.7.6/i18next.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fafafa; }
-        .glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); }
+        .view { display: none; }
+        .view.active { display: block; animation: slideUp 0.5s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); }
+        .step-inactive { filter: grayscale(1) opacity(0.5); }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 font-sans leading-relaxed">
 
-    <!-- 1. ログイン/登録ポータル -->
-    <section id="auth-section" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-6">
-        <div class="w-full max-w-sm glass p-8 rounded-[2rem] shadow-2xl">
-            <h1 class="text-3xl font-extrabold text-center mb-8">Welcome to<br><span class="text-orange-500">SHIGE-CHAN</span></h1>
-            <div class="space-y-4">
-                <input type="email" id="email" placeholder="Email" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
-                <input type="password" id="pass" placeholder="Password" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
-                <button onclick="auth('login')" class="w-full py-4 bg-black text-white rounded-2xl font-bold">Login</button>
-                <button onclick="auth('register')" class="w-full py-4 text-slate-500 text-sm font-bold underline">Create Account</button>
+    <!-- 1. 認証・登録・審査申請 -->
+    <section id="view-auth" class="view active min-h-screen flex items-center justify-center p-4 bg-slate-900">
+        <div class="w-full max-w-md glass p-8 rounded-[2.5rem] shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-black text-orange-500 tracking-tighter">SHIGE-CHAN</h1>
+                <p class="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Identify Verification</p>
+            </div>
+
+            <!-- アカウント作成フォーム -->
+            <div id="auth-main" class="space-y-4">
+                <select id="reg-role" onchange="toggleRegFields()" class="w-full p-4 bg-slate-100 rounded-2xl border-none font-bold">
+                    <option value="user">お客様として登録 (Customer)</option>
+                    <option value="staff">代行パートナーとして登録 (Staff)</option>
+                </select>
+                
+                <input type="text" id="reg-name" placeholder="氏名 (Full Name)" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
+                <input type="tel" id="reg-phone" placeholder="電話番号 (Phone)" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
+                <input type="email" id="reg-email" placeholder="メールアドレス (Email)" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
+                <input type="text" id="reg-addr" placeholder="住所/宿泊施設 (Address/Hotel)" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
+
+                <div class="pt-4 border-t border-slate-200">
+                    <p class="text-[11px] font-bold mb-2 text-slate-500">本人確認書類・顔写真のアップロード</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="bg-slate-100 p-4 rounded-xl text-center cursor-pointer border-2 border-dashed border-slate-300">
+                            <i class="fa-solid fa-id-card text-slate-400 text-xl"></i>
+                            <p class="text-[8px] mt-1">身分証/パスポート</p>
+                            <input type="file" class="hidden">
+                        </label>
+                        <label class="bg-slate-100 p-4 rounded-xl text-center cursor-pointer border-2 border-dashed border-slate-300">
+                            <i class="fa-solid fa-camera text-slate-400 text-xl"></i>
+                            <p class="text-[8px] mt-1">本人顔写真</p>
+                            <input type="file" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-orange-50 p-4 rounded-2xl text-[10px] text-orange-800 leading-tight">
+                    <p class="font-bold mb-1">【重要】利用規約と法律遵守</p>
+                    当サービスは、登録情報の管理者承認後に利用可能です。いたずら、なりすまし、公序良俗に反する行為は即座に法的に対応し、アカウントを停止します。
+                </div>
+
+                <button onclick="requestApproval()" class="w-full py-4 bg-orange-600 text-white font-black rounded-2xl shadow-lg">審査申請を送る</button>
+                <button onclick="adminQuickLogin()" class="w-full py-2 text-slate-400 text-[9px] uppercase font-bold tracking-widest mt-4">管理者ログイン (Admin Login)</button>
             </div>
         </div>
     </section>
 
-    <!-- 2. メインアプリ（ログイン後） -->
-    <div id="app-section" class="hidden">
-        <!-- Google Map 連携用コンテナ -->
-        <div id="map-area" class="h-64 w-full bg-slate-200 flex items-center justify-center text-slate-400">
-            [Google Maps Integration: Pinning Precise Location]
+    <!-- 2. 審査待ち画面 -->
+    <section id="view-pending" class="view min-h-screen flex flex-col items-center justify-center p-10 text-center">
+        <div class="w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 class="text-2xl font-black italic">Wait for Approval</h2>
+        <p class="text-sm text-slate-500 mt-4">ただいま管理者が登録情報を審査しています。<br>承認されるまでしばらくお待ちください。</p>
+    </section>
+
+    <!-- 3. 管理者：全権承認ダッシュボード -->
+    <section id="view-admin" class="view min-h-screen bg-slate-900 text-white p-6">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-xl font-black text-orange-500 italic">ADMIN PANEL</h1>
+            <button onclick="logout()" class="text-xs bg-white/10 px-4 py-2 rounded-full">Logout</button>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+                <p class="text-[9px] opacity-50 uppercase">未承認ユーザー</p>
+                <p id="pending-count" class="text-3xl font-bold">1</p>
+            </div>
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+                <p class="text-[9px] opacity-50 uppercase">稼働スタッフ</p>
+                <p class="text-3xl font-bold">0</p>
+            </div>
         </div>
 
-        <main class="p-6 space-y-8">
-            <!-- 多言語チャットウィジェット -->
-            <section class="glass p-6 rounded-[2rem] border shadow-sm">
-                <h2 class="font-bold mb-4">Customer Support (Multilingual)</h2>
-                <div id="chat-box" class="h-40 overflow-y-auto bg-slate-50 rounded-2xl p-4 mb-4 text-xs"></div>
-                <div class="flex gap-2">
-                    <input type="text" id="chat-input" class="flex-1 p-3 rounded-xl bg-slate-100" placeholder="Message...">
-                    <button onclick="sendMessage()" class="px-6 bg-orange-500 text-white rounded-xl font-bold">Send</button>
+        <h2 class="font-bold text-sm mb-4 text-slate-400">審査待ちリスト (KYC Queue)</h2>
+        <div id="kyc-list" class="space-y-4">
+            <!-- 承認待ちユーザーがここに表示される -->
+        </div>
+    </section>
+
+    <!-- 4. メインアプリ（承認後） -->
+    <div id="app-container" class="hidden">
+        <nav class="bg-white border-b sticky top-0 z-50 p-4 flex justify-between items-center px-6">
+            <span class="font-black text-xl text-orange-600 tracking-tighter italic">SHIGE-CHAN</span>
+            <div class="flex items-center gap-3">
+                <span id="badge" class="text-[9px] font-black bg-green-100 text-green-600 px-3 py-1 rounded-full">APPROVED</span>
+                <button onclick="logout()" class="text-slate-300"><i class="fa-solid fa-power-off"></i></button>
+            </div>
+        </nav>
+
+        <main class="max-w-md mx-auto p-4 space-y-6">
+            <!-- お客様用画面 -->
+            <section id="user-ui" class="hidden space-y-6">
+                <div class="bg-orange-600 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden">
+                    <h2 class="text-2xl font-black">Order Now</h2>
+                    <p class="text-[10px] opacity-80 mt-2">徒歩・自転車・原付での運搬のため、<br>1名で運べる量（最大約5kg）に限定しております。</p>
+                    <div class="mt-6 space-y-3">
+                        <button onclick="order('laundry')" class="w-full bg-white text-orange-600 p-4 rounded-2xl font-black flex justify-between">
+                            <span>🧺 洗濯代行</span><span>¥8,000</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-slate-200">
+                    <h3 class="font-bold text-sm mb-3">⚠️ 洗えないもの・ルール</h3>
+                    <ul class="text-[10px] text-slate-500 space-y-1">
+                        <li>・スーツ、革製品、宝石付きの高級衣類</li>
+                        <li>・1人で持てない過度な量（他の方に迷惑がかかるため）</li>
+                        <li>・代行スタッフへの無理な強要は禁止です</li>
+                    </ul>
                 </div>
             </section>
 
-            <!-- ホテル選択：ワンタッチでGoogleマップ連動 -->
-            <section>
-                <h2 class="font-bold mb-4 text-sm">Select Destination</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="selectLoc('Imperial Hotel', '35.672,139.758')" class="p-4 bg-white border rounded-2xl text-xs font-bold hover:border-orange-500">帝国ホテル</button>
-                    <button onclick="selectLoc('Kawagoe CC', '35.952,139.389')" class="p-4 bg-white border rounded-2xl text-xs font-bold hover:border-orange-500">川越CC</button>
+            <!-- スタッフ用画面 -->
+            <section id="staff-ui" class="hidden space-y-6">
+                <div class="bg-slate-800 p-6 rounded-3xl text-white">
+                    <h2 class="text-lg font-black">案件を探す (Uber Style)</h2>
+                    <p class="text-[10px] text-orange-400 mt-1">承認済みパートナー：誠実な対応をお願いします</p>
                 </div>
+                <div id="job-board" class="space-y-4"></div>
             </section>
         </main>
     </div>
 
     <script>
-        // 管理者用認証とログイン管理
-        function auth(mode) {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
+        let db = { users: [], orders: [], current: null };
 
-            // 管理者特別判定: 登録もログインもこれで完結
-            if(email === "shigeme117@yahoo.co.jp" && pass === "117") {
-                alert("Welcome, Admin");
-                showApp('admin');
-            } else {
-                alert("Account created/logged in.");
-                showApp('user');
+        // 審査申請
+        function requestApproval() {
+            const role = document.getElementById('reg-role').value;
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const email = document.getElementById('reg-email').value;
+
+            if(!name || !phone || !email) return alert("全ての情報を入力し、身分証を添付してください");
+
+            db.current = { name, role, email, phone, status: 'pending' };
+            db.users.push(db.current);
+
+            document.getElementById('view-auth').classList.remove('active');
+            document.getElementById('view-pending').classList.add('active');
+        }
+
+        // 管理者ログイン
+        function adminQuickLogin() {
+            const pw = prompt("Admin Password?");
+            if(pw === "117") {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById('view-admin').classList.add('active');
+                renderAdmin();
             }
         }
 
-        function showApp(role) {
-            document.getElementById('auth-section').style.display = 'none';
-            document.getElementById('app-section').classList.remove('hidden');
-            console.log("Logged in as:", role);
+        function renderAdmin() {
+            const list = document.getElementById('kyc-list');
+            list.innerHTML = db.users.filter(u => u.status === 'pending').map(u => `
+                <div class="bg-white/10 p-5 rounded-2xl border border-white/10 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[8px] bg-orange-500 px-2 py-0.5 rounded font-bold">${u.role.toUpperCase()}</span>
+                            <p class="font-black text-lg mt-1">${u.name}</p>
+                            <p class="text-[10px] opacity-50">${u.email} / ${u.phone}</p>
+                        </div>
+                        <i class="fa-solid fa-id-card-clip text-2xl opacity-30"></i>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="approveUser('${u.email}')" class="flex-1 bg-green-500 py-3 rounded-xl text-xs font-black">承認 (Approve)</button>
+                        <button class="flex-1 bg-red-500/20 py-3 rounded-xl text-xs font-black">拒絶</button>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-center text-slate-500 py-10">審査待ちはいません</p>';
         }
 
-        // マップピン止めシミュレーション
-        function selectLoc(name, coord) {
-            alert(name + " にピンを固定しました: " + coord);
-            // ここに Google Maps API を呼び出す処理が入ります
+        function approveUser(email) {
+            const u = db.users.find(user => user.email === email);
+            u.status = 'approved';
+            alert(`${u.name} 様を承認しました。`);
+            renderAdmin();
         }
 
-        // 多言語チャット
-        function sendMessage() {
-            const msg = document.getElementById('chat-input').value;
-            const chat = document.getElementById('chat-box');
-            chat.innerHTML += `<div class="mb-2"><b>You:</b> ${msg}</div>`;
-            document.getElementById('chat-input').value = '';
+        function logout() {
+            location.reload();
+        }
+
+        // 便宜上、承認された体でメイン画面へ進むシミュレーション（本来はログイン時にStatusチェック）
+        function startApp(role) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('app-container').classList.remove('hidden');
+            if(role === 'user') document.getElementById('user-ui').classList.remove('hidden');
+            if(role === 'staff') document.getElementById('staff-ui').classList.remove('hidden');
         }
     </script>
 </body>
