@@ -1,191 +1,95 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SHIGE-CHAN System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHIGE-CHAN | Premium Proxy Service</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/23.7.6/i18next.min.js"></script>
     <style>
-        .view { display: none; }
-        .view.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fafafa; }
+        .glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans">
+<body>
 
-    <section id="view-login" class="view active min-h-screen flex flex-col items-center justify-center p-6 bg-slate-900">
-        <div class="text-center mb-10">
-            <h1 class="text-5xl font-black text-orange-500 tracking-tighter">SHIGE-CHAN</h1>
-            <p class="text-slate-400 text-xs mt-2 font-bold uppercase tracking-widest">Security Portal</p>
-        </div>
-        <div class="w-full max-w-xs space-y-4">
-            <button onclick="login('user')" class="w-full py-5 bg-white text-slate-900 font-black rounded-2xl shadow-xl flex items-center justify-center gap-3">
-                <i class="fa-solid fa-user"></i> お客様として利用
-            </button>
-            <button onclick="login('staff')" class="w-full py-5 bg-orange-500 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-3">
-                <i class="fa-solid fa-bicycle"></i> 代行スタッフログイン
-            </button>
-            <button onclick="login('admin')" class="w-full py-3 text-slate-500 font-bold text-[10px] hover:text-orange-400">
-                <i class="fa-solid fa-lock"></i> 管理者ログイン
-            </button>
+    <!-- 1. ログイン/登録ポータル -->
+    <section id="auth-section" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm glass p-8 rounded-[2rem] shadow-2xl">
+            <h1 class="text-3xl font-extrabold text-center mb-8">Welcome to<br><span class="text-orange-500">SHIGE-CHAN</span></h1>
+            <div class="space-y-4">
+                <input type="email" id="email" placeholder="Email" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
+                <input type="password" id="pass" placeholder="Password" class="w-full p-4 bg-slate-100 rounded-2xl border-none">
+                <button onclick="auth('login')" class="w-full py-4 bg-black text-white rounded-2xl font-bold">Login</button>
+                <button onclick="auth('register')" class="w-full py-4 text-slate-500 text-sm font-bold underline">Create Account</button>
+            </div>
         </div>
     </section>
 
-    <div id="app-container" class="hidden min-h-screen">
-        <nav class="bg-white border-b sticky top-0 z-50 p-4 flex justify-between items-center shadow-sm">
-            <span class="font-black text-orange-600">SHIGE-CHAN</span>
-            <button onclick="logout()" class="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full uppercase">Logout</button>
-        </nav>
+    <!-- 2. メインアプリ（ログイン後） -->
+    <div id="app-section" class="hidden">
+        <!-- Google Map 連携用コンテナ -->
+        <div id="map-area" class="h-64 w-full bg-slate-200 flex items-center justify-center text-slate-400">
+            [Google Maps Integration: Pinning Precise Location]
+        </div>
 
-        <main class="max-w-md mx-auto p-4 pb-20">
-            
-            <section id="view-user" class="view space-y-6">
-                <div class="bg-orange-500 p-6 rounded-3xl text-white shadow-lg">
-                    <h2 class="text-xl font-black">新規オーダー</h2>
-                    <p class="text-[10px] opacity-70 mb-4">他の利用者からは見えませんのでご安心ください</p>
-                    <input type="text" id="order-item" placeholder="依頼内容（例：洗濯代行）" class="w-full p-4 bg-white/20 rounded-2xl border-2 border-white/30 text-white placeholder:text-white/50 mb-3 outline-none">
-                    <button onclick="placeOrder()" class="w-full bg-white text-orange-600 font-black py-4 rounded-2xl shadow-md active:scale-95">注文を確定する</button>
-                </div>
-                <div>
-                    <h3 class="font-black text-sm mb-3"><i class="fa-solid fa-clock-rotate-left mr-2"></i>あなたの注文履歴</h3>
-                    <div id="user-orders" class="space-y-3 text-slate-400 text-xs text-center py-10 bg-white rounded-2xl border border-dashed">
-                        注文履歴はありません
-                    </div>
+        <main class="p-6 space-y-8">
+            <!-- 多言語チャットウィジェット -->
+            <section class="glass p-6 rounded-[2rem] border shadow-sm">
+                <h2 class="font-bold mb-4">Customer Support (Multilingual)</h2>
+                <div id="chat-box" class="h-40 overflow-y-auto bg-slate-50 rounded-2xl p-4 mb-4 text-xs"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="chat-input" class="flex-1 p-3 rounded-xl bg-slate-100" placeholder="Message...">
+                    <button onclick="sendMessage()" class="px-6 bg-orange-500 text-white rounded-xl font-bold">Send</button>
                 </div>
             </section>
 
-            <section id="view-staff" class="view space-y-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="font-black text-lg">案件ボード <span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded ml-2">募集中</span></h2>
+            <!-- ホテル選択：ワンタッチでGoogleマップ連動 -->
+            <section>
+                <h2 class="font-bold mb-4 text-sm">Select Destination</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="selectLoc('Imperial Hotel', '35.672,139.758')" class="p-4 bg-white border rounded-2xl text-xs font-bold hover:border-orange-500">帝国ホテル</button>
+                    <button onclick="selectLoc('Kawagoe CC', '35.952,139.389')" class="p-4 bg-white border rounded-2xl text-xs font-bold hover:border-orange-500">川越CC</button>
                 </div>
-                <div id="staff-board" class="space-y-4">
-                    </div>
-            </section>
-
-            <section id="view-admin" class="view space-y-6">
-                <div class="bg-slate-900 p-6 rounded-3xl text-white">
-                    <p class="text-[10px] opacity-50 font-bold uppercase">Master Control</p>
-                    <p class="text-xs mt-1">shigeme117@yahoo.co.jp</p>
-                    <div class="mt-4 pt-4 border-t border-white/10 flex justify-between">
-                        <div><p class="text-[9px] opacity-50">Total Sales</p><p id="adm-sales" class="text-xl font-black text-orange-400">¥0</p></div>
-                        <div><p class="text-[9px] opacity-50">Orders</p><p id="adm-count" class="text-xl font-black">0</p></div>
-                    </div>
-                </div>
-                <h3 class="font-black text-sm">全注文ログ・ステータス管理</h3>
-                <div id="admin-all-list" class="space-y-3"></div>
             </section>
         </main>
     </div>
 
     <script>
-        // 擬似データベース
-        let db = { orders: [], currentUser: null, role: null };
+        // 管理者用認証とログイン管理
+        function auth(mode) {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
 
-        function login(role) {
-            if(role === 'admin') {
-                const pw = prompt("管理者パスワードを入力してください");
-                if(pw !== '117') return alert("認証失敗");
+            // 管理者特別判定: 登録もログインもこれで完結
+            if(email === "shigeme117@yahoo.co.jp" && pass === "117") {
+                alert("Welcome, Admin");
+                showApp('admin');
+            } else {
+                alert("Account created/logged in.");
+                showApp('user');
             }
-            if(role === 'staff') {
-                const id = prompt("スタッフIDを入力してください");
-                if(!id) return;
-            }
-
-            db.role = role;
-            document.getElementById('view-login').classList.remove('active');
-            document.getElementById('app-container').classList.remove('hidden');
-            
-            showView(role);
         }
 
-        function showView(role) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-' + role).classList.add('active');
-            render();
+        function showApp(role) {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('app-section').classList.remove('hidden');
+            console.log("Logged in as:", role);
         }
 
-        function logout() {
-            db.role = null;
-            document.getElementById('app-container').classList.add('hidden');
-            document.getElementById('view-login').classList.add('active');
+        // マップピン止めシミュレーション
+        function selectLoc(name, coord) {
+            alert(name + " にピンを固定しました: " + coord);
+            // ここに Google Maps API を呼び出す処理が入ります
         }
 
-        // 注文アクション
-        function placeOrder() {
-            const item = document.getElementById('order-item').value;
-            if(!item) return alert("内容を入力してください");
-            
-            const newOrder = {
-                id: 'ORD-' + Date.now(),
-                user: 'GuestUser', // 本来はログインユーザーID
-                content: item,
-                status: '募集中',
-                price: 3500,
-                time: new Date().toLocaleString('ja-JP')
-            };
-            db.orders.push(newOrder);
-            document.getElementById('order-item').value = '';
-            alert("注文が完了しました。スタッフの対応をお待ちください。");
-            render();
-        }
-
-        // スタッフが受注
-        function takeJob(id) {
-            const order = db.orders.find(o => o.id === id);
-            order.status = '対応中';
-            alert("案件を受注しました。お客様へ向かってください。");
-            render();
-        }
-
-        // 画面描画（ここで権限ごとにフィルタリング）
-        function render() {
-            if(db.role === 'user') {
-                const container = document.getElementById('user-orders');
-                const myOrders = db.orders; // 本来はUserIDでフィルタ
-                container.innerHTML = myOrders.length ? myOrders.map(o => `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-left">
-                        <div class="flex justify-between items-start">
-                            <p class="font-black text-sm">${o.content}</p>
-                            <span class="text-[9px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-black">${o.status}</span>
-                        </div>
-                        <p class="text-[9px] text-slate-400 mt-2">${o.id} | ${o.time}</p>
-                    </div>
-                `).join('') : '注文履歴はありません';
-            }
-
-            if(db.role === 'staff') {
-                const container = document.getElementById('staff-board');
-                const jobs = db.orders.filter(o => o.status === '募集中');
-                container.innerHTML = jobs.length ? jobs.map(o => `
-                    <div class="bg-white p-5 rounded-3xl shadow-md border-l-8 border-orange-500">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">${o.id}</p>
-                        <p class="font-black text-lg mt-1">${o.content}</p>
-                        <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-location-dot mr-1"></i> 指定先へ移動</p>
-                        <button onclick="takeJob('${o.id}')" class="mt-4 w-full bg-slate-900 text-white font-black py-3 rounded-xl active:scale-95">この案件を引き受ける</button>
-                    </div>
-                `).join('') : '<p class="text-center text-slate-400 py-20 text-xs italic">現在、募集中の案件はありません</p>';
-            }
-
-            if(db.role === 'admin') {
-                const container = document.getElementById('admin-all-list');
-                document.getElementById('adm-sales').innerText = "¥" + (db.orders.length * 3500).toLocaleString();
-                document.getElementById('adm-count').innerText = db.orders.length;
-                
-                container.innerHTML = db.orders.map(o => `
-                    <div class="bg-white p-4 rounded-xl border flex justify-between items-center">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400">${o.id}</p>
-                            <p class="text-xs font-black">${o.content}</p>
-                            <p class="text-[9px] text-blue-500">${o.status}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-black text-sm text-orange-600">¥3,500</p>
-                            <button class="text-[8px] bg-slate-100 px-2 py-1 rounded mt-1">詳細</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
+        // 多言語チャット
+        function sendMessage() {
+            const msg = document.getElementById('chat-input').value;
+            const chat = document.getElementById('chat-box');
+            chat.innerHTML += `<div class="mb-2"><b>You:</b> ${msg}</div>`;
+            document.getElementById('chat-input').value = '';
         }
     </script>
 </body>
