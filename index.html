@@ -3,195 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SHIGE-CHAN | Portal</title>
+    <title>SHIGE-CHAN Laundry & Booking | Professional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root { --brand: #ff5a00; --dark: #0f172a; }
         .view { display: none; }
-        .view.active { display: block; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border-radius: 2.5rem; }
+        .view.active { display: block; animation: pageIn 0.3s ease-out; }
+        @keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); }
+        .btn-shige { transition: all 0.2s; background: var(--brand); color: white; font-weight: 900; }
+        .btn-shige:active { transform: scale(0.96); }
+        input, select { border: 1px solid #e2e8f0 !important; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-900 font-sans">
+<body class="bg-slate-50 text-slate-900 font-sans">
 
-    <!-- 1. 認証ゲートウェイ -->
-    <section id="view-auth" class="view active min-h-screen flex items-center justify-center p-6 bg-slate-900">
-        <div class="w-full max-w-sm glass p-10 shadow-2xl relative">
-            
-            <div class="text-center mb-10">
-                <h1 class="text-4xl font-black text-orange-500 tracking-tighter italic">SHIGE-CHAN</h1>
-                <div class="flex justify-center gap-6 mt-6">
-                    <button id="tab-login" onclick="setAuthMode('login')" class="text-[11px] font-black border-b-2 border-orange-500 pb-1">LOGIN</button>
-                    <button id="tab-reg" onclick="setAuthMode('reg')" class="text-[11px] font-black text-slate-400 pb-1">SIGN UP</button>
+    <!-- 1. ログイン・登録ゲートウェイ -->
+    <section id="view-auth" class="view active min-h-screen flex items-center justify-center p-4 bg-slate-900">
+        <div class="w-full max-w-md glass p-8 rounded-[2.5rem] shadow-2xl">
+            <div class="text-center mb-6">
+                <h1 class="text-4xl font-black text-orange-500 italic tracking-tighter">SHIGE-CHAN</h1>
+                <div class="flex bg-slate-100 p-1 rounded-full mt-6">
+                    <button id="tab-login" onclick="setMode('login')" class="flex-1 py-2 text-[10px] font-black rounded-full bg-white shadow-sm">ログイン</button>
+                    <button id="tab-reg" onclick="setMode('reg')" class="flex-1 py-2 text-[10px] font-black rounded-full text-slate-500">新規登録</button>
                 </div>
             </div>
 
             <div class="space-y-4">
-                <div class="relative">
-                    <i class="fa-solid fa-envelope absolute left-4 top-4 text-slate-400 text-sm"></i>
-                    <input type="email" id="auth-email" placeholder="メールアドレス" class="w-full p-4 pl-12 bg-slate-100 rounded-2xl border-none outline-none text-sm">
-                </div>
-                <div class="relative">
-                    <i class="fa-solid fa-lock absolute left-4 top-4 text-slate-400 text-sm"></i>
-                    <input type="password" id="auth-pass" placeholder="パスワード" class="w-full p-4 pl-12 bg-slate-100 rounded-2xl border-none outline-none text-sm">
-                </div>
-
-                <!-- 新規登録用追加フィールド -->
-                <div id="reg-fields" class="hidden space-y-4 animate-fadeIn">
-                    <input type="text" id="reg-name" placeholder="お名前（フルネーム）" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm">
-                    <select id="reg-role" class="w-full p-4 bg-slate-100 rounded-2xl border-none font-bold text-slate-500 text-sm">
-                        <option value="user">お客様として利用 (Customer)</option>
-                        <option value="staff">代行スタッフとして働く (Staff)</option>
+                <div id="reg-only" class="hidden space-y-4">
+                    <select id="reg-role" class="w-full p-4 rounded-2xl text-sm font-bold">
+                        <option value="user">お客様 (Customer)</option>
+                        <option value="staff">代行パートナー (Partner)</option>
                     </select>
-                    <div class="p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                        <p class="text-[9px] text-orange-700 font-bold leading-relaxed">
-                            【いたずら防止】身分証明書/パスポートの写真を後ほどアップロードしていただきます。管理者の承認後に全機能が有効になります。
-                        </p>
+                    <input type="text" id="reg-name" placeholder="氏名" class="w-full p-4 rounded-2xl text-sm">
+                    <input type="tel" id="reg-phone" placeholder="電話番号" class="w-full p-4 rounded-2xl text-sm">
+                    <div class="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-center text-slate-400">
+                        <i class="fa-solid fa-camera mb-2"></i>
+                        <p class="text-[9px] font-bold">身分証/パスポート 写真を添付</p>
+                        <input type="file" class="mt-2 text-[9px]">
                     </div>
                 </div>
 
-                <button onclick="handleAuth()" id="btn-main" class="w-full py-4 bg-orange-600 text-white font-black rounded-2xl shadow-lg hover:bg-orange-700 transition-all active:scale-95">ログイン</button>
-            </div>
+                <input type="email" id="auth-email" placeholder="メールアドレス" class="w-full p-4 rounded-2xl text-sm outline-orange-500">
+                <input type="password" id="auth-pass" placeholder="パスワード" class="w-full p-4 rounded-2xl text-sm outline-orange-500">
 
-            <!-- ★管理者ログインへの切り替えボタン（デザインを邪魔しない位置に配置） -->
-            <div class="mt-8 text-center">
-                <button onclick="toggleAdminView()" id="admin-toggle-btn" class="text-[9px] font-bold text-slate-400 hover:text-orange-500 uppercase tracking-widest">
-                    <i class="fa-solid fa-shield-halved mr-1"></i> 管理者ログインはこちら
-                </button>
+                <button onclick="executeAuth()" id="btn-action" class="w-full py-4 btn-shige rounded-2xl shadow-lg">ログイン</button>
+                
+                <div class="text-center mt-6 border-t pt-4">
+                    <button onclick="setAdminMode()" class="text-[10px] font-bold text-slate-400 hover:text-orange-500 uppercase">
+                        <i class="fa-solid fa-crown"></i> Administrator Login
+                    </button>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- 2. 審査待ち画面 -->
-    <section id="view-pending" class="view min-h-screen flex flex-col items-center justify-center p-10 text-center bg-white">
-        <div class="w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-8"></div>
-        <h2 class="text-2xl font-black italic text-slate-800">Reviewing Your Identity</h2>
-        <p class="text-xs text-slate-500 mt-4 leading-loose">
-            ご登録ありがとうございます。いたずら防止のため、<br>現在 shigeme117 管理者が情報を精査しております。<br>承認まで今しばらくお待ちください。
+    <!-- 2. 審査待ち -->
+    <section id="view-pending" class="view min-h-screen flex flex-col items-center justify-center p-10 text-center">
+        <div class="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 class="text-2xl font-black italic">Wait for Approval</h2>
+        <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+            現在、管理者 shigeme117 が身分証を確認中です。<br>いたずら防止のため、承認後に全機能が有効化されます。
         </p>
-        <button onclick="location.reload()" class="mt-10 px-8 py-3 bg-slate-100 rounded-full text-[10px] font-black text-slate-400">ログイン画面に戻る</button>
+        <button onclick="location.reload()" class="mt-10 text-[10px] font-bold text-slate-400 underline uppercase tracking-widest">Login Back</button>
     </section>
 
-    <!-- 3. メインアプリ（承認済み・管理者用） -->
+    <!-- 3. メインアプリ -->
     <div id="app-container" class="hidden">
-        <nav class="bg-white border-b sticky top-0 z-50 p-4 flex justify-between items-center px-8 shadow-sm">
+        <nav class="bg-white border-b sticky top-0 z-50 p-4 flex justify-between items-center px-6">
             <span class="font-black text-xl text-orange-600 italic tracking-tighter">SHIGE-CHAN</span>
             <div class="flex items-center gap-4">
-                <span id="role-badge" class="text-[9px] font-black bg-slate-900 text-white px-3 py-1 rounded-full uppercase tracking-tighter">USER</span>
-                <button onclick="location.reload()" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-power-off"></i></button>
+                <span id="badge-role" class="text-[8px] font-black bg-slate-900 text-white px-3 py-1 rounded-full uppercase">USER</span>
+                <button onclick="location.reload()" class="text-slate-200 hover:text-red-500"><i class="fa-solid fa-power-off"></i></button>
             </div>
         </nav>
-        <main id="app-content" class="max-w-md mx-auto p-6"></main>
+
+        <main id="app-content" class="max-w-md mx-auto p-4 pb-24"></main>
+
+        <div id="tab-bar" class="fixed bottom-0 inset-x-0 bg-white border-t p-4 flex justify-around items-center">
+            <button class="text-orange-500 flex flex-col items-center"><i class="fa-solid fa-square-poll-vertical"></i><span class="text-[8px] font-bold mt-1 uppercase">Request</span></button>
+            <button class="text-slate-300 flex flex-col items-center"><i class="fa-solid fa-map-location-dot"></i><span class="text-[8px] font-bold mt-1 uppercase">Map</span></button>
+            <button class="text-slate-300 flex flex-col items-center"><i class="fa-solid fa-wallet"></i><span class="text-[8px] font-bold mt-1 uppercase">Wallet</span></button>
+        </div>
     </div>
 
     <script>
         let mode = 'login';
-        let isAdminLogin = false;
-        
-        // 擬似DB（管理者は初期登録済み）[span_2](start_span)[span_2](end_span)
         let db = {
-            users: [{ email: "shigeme117@yahoo.co.jp", pass: "117", role: "admin", name: "Master Admin", status: "approved" }],
+            users: [{ email: "shigeme117@yahoo.co.jp", pass: "117", name: "管理者", role: "admin", status: "approved" }],
             orders: []
         };
         let currentUser = null;
 
-        function setAuthMode(m) {
+        function setMode(m) {
             mode = m;
-            isAdminLogin = false;
-            document.getElementById('reg-fields').classList.toggle('hidden', m === 'login');
-            document.getElementById('btn-main').innerText = m === 'login' ? 'ログイン' : '新規登録を申請';
-            document.getElementById('tab-login').className = m === 'login' ? 'text-[11px] font-black border-b-2 border-orange-500 pb-1' : 'text-[11px] font-black text-slate-400 pb-1';
-            document.getElementById('tab-reg').className = m === 'reg' ? 'text-[11px] font-black border-b-2 border-orange-500 pb-1' : 'text-[11px] font-black text-slate-400 pb-1';
-            document.getElementById('admin-toggle-btn').classList.remove('text-orange-500');
+            document.getElementById('reg-only').classList.toggle('hidden', m === 'login');
+            document.getElementById('btn-action').innerText = m === 'login' ? 'ログイン' : '登録申請を送信';
+            document.getElementById('tab-login').className = m === 'login' ? 'flex-1 py-2 text-[10px] font-black rounded-full bg-white shadow-sm' : 'flex-1 py-2 text-[10px] font-black rounded-full text-slate-500';
+            document.getElementById('tab-reg').className = m === 'reg' ? 'flex-1 py-2 text-[10px] font-black rounded-full bg-white shadow-sm' : 'flex-1 py-2 text-[10px] font-black rounded-full text-slate-500';
         }
 
-        function toggleAdminView() {
-            isAdminLogin = true;
-            mode = 'login';
-            document.getElementById('reg-fields').classList.add('hidden');
-            document.getElementById('btn-main').innerText = '管理者としてログイン';
-            document.getElementById('admin-toggle-btn').classList.add('text-orange-500');
-            document.getElementById('tab-login').className = 'text-[11px] font-black text-slate-400 pb-1';
-            document.getElementById('tab-reg').className = 'text-[11px] font-black text-slate-400 pb-1';
-        }
+        function setAdminMode() { setMode('login'); alert("管理者アカウントでログインしてください"); }
 
-        function handleAuth() {
+        function executeAuth() {
             const email = document.getElementById('auth-email').value;
             const pass = document.getElementById('auth-pass').value;
-
             if (mode === 'reg') {
                 const name = document.getElementById('reg-name').value;
                 const role = document.getElementById('reg-role').value;
-                if(!name || !email || !pass) return alert("全ての項目を正しく入力してください");
-                
+                if(!name || !email || !pass) return alert("入力エラー: 全て入力してください");
                 db.users.push({ email, pass, name, role, status: 'pending' });
-                alert("申請を送信しました。管理者の承認をお待ちください。");
-                setAuthMode('login');
+                alert("申請完了。管理者の承認を待機しています。");
+                setMode('login');
             } else {
                 const user = db.users.find(u => u.email === email && u.pass === pass);
-                if (!user) return alert("IDまたはパスワードが違います");
-                
+                if (!user) return alert("認証エラー: ログイン情報が違います");
                 currentUser = user;
-                if (user.status === 'pending') {
-                    document.getElementById('view-auth').classList.remove('active');
-                    document.getElementById('view-pending').classList.add('active');
-                } else {
-                    document.getElementById('view-auth').classList.remove('active');
-                    document.getElementById('app-container').classList.remove('hidden');
-                    renderDashboard();
-                }
+                if (user.status === 'pending') { switchView('view-pending'); }
+                else { switchView('app-container'); renderUI(); }
             }
         }
 
-        function renderDashboard() {
+        function renderUI() {
             const main = document.getElementById('app-content');
-            document.getElementById('role-badge').innerText = currentUser.role;
+            document.getElementById('badge-role').innerText = currentUser.role;
 
             if (currentUser.role === 'admin') {
                 main.innerHTML = `
-                    <div class="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl mb-8">
-                        <p class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Administrator</p>
-                        <h2 class="text-2xl font-black mt-2">全ユーザー・案件監視</h2>
-                        <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/10">
-                            <div><p class="text-[9px] opacity-40 uppercase">Pending Users</p><p class="text-xl font-bold">${db.users.filter(u=>u.status==='pending').length}</p></div>
-                            <div><p class="text-[9px] opacity-40 uppercase">Active Jobs</p><p class="text-xl font-bold">0</p></div>
+                    <div class="bg-slate-900 p-8 rounded-[2rem] text-white shadow-xl mb-6">
+                        <h2 class="text-xl font-black italic text-orange-500">Master Console</h2>
+                        <div class="grid grid-cols-2 gap-4 mt-6">
+                            <div class="bg-white/5 p-4 rounded-2xl"><p class="text-[8px] opacity-40">審査待ち</p><p class="text-lg font-black">${db.users.filter(u=>u.status==='pending').length}</p></div>
+                            <div class="bg-white/5 p-4 rounded-2xl"><p class="text-[8px] opacity-40">本日売上</p><p class="text-lg font-black">¥0</p></div>
                         </div>
                     </div>
-                    <h3 class="font-black text-sm text-slate-400 px-2 mb-4 uppercase">審査待ちリスト (KYC Queue)</h3>
-                    <div class="space-y-4">${renderKYCList()}</div>
+                    <h3 class="font-black text-[10px] text-slate-400 mb-4 px-2 tracking-widest uppercase">KYC / 承認待ちユーザー</h3>
+                    <div class="space-y-3">${renderAdminQueue()}</div>
                 `;
-            } else if (currentUser.role === 'user') {
+            } else {
                 main.innerHTML = `
-                    <div class="bg-orange-600 p-8 rounded-[3rem] text-white shadow-xl">
-                        <h2 class="text-3xl font-black italic leading-tight">Ready to<br>Help You.</h2>
-                        <p class="text-xs mt-4 opacity-80 leading-relaxed">
-                            徒歩・自転車での運搬のため、お荷物は一人で持てる量（5kg以内）に限定。スーツや革製品は対象外です。
-                        </p>
-                        <button class="mt-8 w-full bg-white text-orange-600 py-5 rounded-2xl font-black shadow-lg active:scale-95 transition-transform">注文を依頼する (¥8,000〜)</button>
+                    <div class="space-y-4">
+                        <div class="bg-orange-600 p-8 rounded-[2.5rem] text-white shadow-xl mb-4 relative overflow-hidden">
+                            <h2 class="text-3xl font-black italic">Premium<br>Proxy Service</h2>
+                            <p class="text-[10px] mt-4 opacity-80 font-bold leading-relaxed">Uber Eats以上の信頼性。徒歩・自転車の機動力。<br>身分証認証済みのパートナーのみが対応します。</p>
+                        </div>
+                        
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Laundry Service (洗濯代行)</p>
+                        <button class="w-full bg-white p-6 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
+                            <div class="text-left"><span class="font-black">🧺 通常便 (3-5h)</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥4,000 / 管理:¥2,000</p></div>
+                            <span class="text-orange-600 font-black">¥6,000</span>
+                        </button>
+                        <button class="w-full bg-slate-900 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-xl">
+                            <div class="text-left"><span class="font-black text-orange-500">⚡ 最短便 (3h以内)</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥5,000 / 管理:¥3,000</p></div>
+                            <span class="font-black">¥8,000</span>
+                        </button>
+
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mt-6">Booking Proxy (予約・順番待ち代行)</p>
+                        <button class="w-full bg-white p-6 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
+                            <div class="text-left"><span class="font-black">📅 スタンダード予約</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥2,500 / 管理:¥1,500</p></div>
+                            <span class="text-orange-600 font-black text-lg">¥4,000</span>
+                        </button>
+                        <button class="w-full bg-white p-6 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
+                            <div class="text-left"><span class="font-black">👑 激戦店・深夜早朝</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥4,000 / 管理:¥2,000</p></div>
+                            <span class="text-orange-600 font-black text-lg">¥6,000</span>
+                        </button>
+                        
+                        <div class="bg-white p-6 rounded-[2rem] border border-red-50 text-[9px] text-red-400 font-bold leading-relaxed">
+                            <p class="mb-2 text-red-600 uppercase tracking-widest text-[8px]">Terms of Service</p>
+                            ・いたずら・虚偽の依頼は即座にアカウント凍結・法的処置。<br>
+                            ・決済は事前クレジットまたは当日現金のみ対応。<br>
+                            ・管理者 shigeme117 はすべての取引を監視しています。
+                        </div>
                     </div>
                 `;
             }
         }
 
-        function renderKYCList() {
+        function renderAdminQueue() {
             const pending = db.users.filter(u => u.status === 'pending');
             return pending.length ? pending.map(u => `
-                <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center">
-                    <div>
-                        <p class="font-black text-slate-800">${u.name}</p>
-                        <p class="text-[10px] text-slate-400 mt-1">${u.role.toUpperCase()} / ${u.email}</p>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 flex justify-between items-center">
+                    <div><p class="font-black text-sm text-slate-800">${u.name}</p><p class="text-[8px] text-slate-400">${u.role.toUpperCase()} / ${u.email}</p></div>
+                    <div class="flex gap-2">
+                        <button onclick="approve('${u.email}')" class="bg-green-500 text-white text-[9px] font-black px-4 py-2 rounded-full shadow-lg">承認</button>
+                        <button class="bg-red-500 text-white text-[9px] font-black px-4 py-2 rounded-full shadow-lg">拒否</button>
                     </div>
-                    <button onclick="approveUser('${u.email}')" class="bg-orange-500 text-white text-[10px] font-black px-5 py-2 rounded-full shadow-md active:scale-90">承認する</button>
                 </div>
-            `).join('') : '<p class="text-center text-slate-300 py-10 text-xs italic">現在、審査待ちのユーザーはいません</p>';
+            `).join('') : '<div class="p-10 text-center opacity-20 italic text-xs">No pending applications.</div>';
         }
 
-        function approveUser(email) {
-            const user = db.users.find(u => u.email === email);
-            user.status = 'approved';
-            alert(`${user.name} 様の利用を承認しました。`);
-            renderDashboard();
+        function approve(email) {
+            const u = db.users.find(user => user.email === email);
+            u.status = 'approved';
+            alert(`承認成功: ${u.name} 様がシステムを利用可能になりました。`);
+            renderUI();
+        }
+
+        function switchView(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('app-container').classList.add('hidden');
+            const target = document.getElementById(id);
+            if(target) target.classList.add('active');
+            if(id === 'app-container') target.classList.remove('hidden');
         }
     </script>
 </body>
