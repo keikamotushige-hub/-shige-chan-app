@@ -3,24 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>おたすけ代行</title>
+    <title>SHIGE-CHAN Laundry Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page-node { display: none; }
+        .page-node.active { display: block; }
+    </style>
 </head>
-<body class="bg-orange-50 min-h-screen p-4">
-    <div class="max-w-md mx-auto bg-white p-6 rounded-3xl shadow-xl border-t-8 border-orange-400 mt-10">
-        <h1 class="text-3xl font-black text-center mb-6 text-orange-600">おたすけ代行</h1>
-        
-        <div class="space-y-4">
-            <!-- ボタン1 -->
-            <button onclick="alert('洗濯代行が選択されました！')" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-2xl shadow-md transition duration-200">
-                🧺 洗濯代行を頼む
-            </button>
+<body class="bg-slate-50 min-h-screen text-slate-900">
 
-            <!-- ボタン2 -->
-            <button onclick="alert('その他のおたすけが選択されました！')" class="w-full bg-white border-2 border-orange-500 text-orange-600 font-bold py-4 px-6 rounded-2xl shadow-md hover:bg-orange-50 transition duration-200">
-                🛠 その他のおたすけ
-            </button>
+    <!-- ナビゲーション -->
+    <nav class="bg-white border-b sticky top-0 z-50">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <span class="text-xl font-black text-orange-600 tracking-tighter">SHIGE-CHAN</span>
+            <div class="flex items-center gap-2">
+                <select id="langSelect" class="text-xs border rounded-md p-1 bg-orange-50 font-bold" onchange="updateLanguage()">
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                    <option value="zh">中国語</option>
+                    <option value="ko">韓国語</option>
+                </select>
+                <button onclick="showPage('admin')" class="text-slate-400"><i class="fa-solid fa-user-shield"></i></button>
+            </div>
         </div>
+    </nav>
 
-        <p class="text-center text-gray-400 text-xs mt-8">© Shige-chan Laundry</p>
-    </
+    <div class="max-w-md mx-auto pb-24">
+
+        <!-- 【1】お客様トップ -->
+        <section id="page-user" class="page-node active p-4 space-y-6">
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+                <h2 id="t-hero-title" class="text-3xl font-bold italic">Laundry Proxy</h2>
+                <p id="t-hero-desc" class="mt-2 text-sm opacity-90">越谷からお届けする、安心の洗濯代行</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+                <h3 id="t-order-title" class="text-lg font-bold flex items-center gap-2 text-orange-600">ご注文</h3>
+                <input type="text" id="p-name" class="w-full p-4 bg-slate-50 rounded-xl ring-1 ring-slate-200 outline-none">
+                <input type="text" id="p-addr" class="w-full p-4 bg-slate-50 rounded-xl ring-1 ring-slate-200 outline-none">
+                <button id="t-btn-order" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-600 transition-all">注文確定</button>
+            </div>
+
+            <button onclick="showPage('crew')" id="t-link-crew" class="w-full text-sm font-bold text-slate-500 underline">代行スタッフ（業務委託）登録はこちら</button>
+        </section>
+
+        <!-- 【2】クルー登録 -->
+        <section id="page-crew" class="page-node p-4 space-y-6">
+            <div class="bg-slate-800 rounded-3xl p-6 text-white">
+                <h2 id="t-crew-title" class="text-xl font-bold">Crew Partner</h2>
+                <p id="t-crew-desc" class="text-xs opacity-70">空き時間を報酬に変えましょう</p>
+            </div>
+            <div class="bg-white rounded-2xl border p-6 space-y-4">
+                <h3 id="t-upload-title" class="font-bold">本人確認書類</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 text-[10px]">Photo (Front)</div>
+                    <div class="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 text-[10px]">Photo (Back)</div>
+                </div>
+                <button id="t-btn-apply" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl">申請する</button>
+                <button onclick="showPage('user')" id="t-btn-back" class="w-full text-slate-400 text-sm">戻る</button>
+            </div>
+        </section>
+
+        <!-- 【3】管理者 -->
+        <section id="page-admin" class="page-node p-4">
+            <div class="bg-white rounded-2xl border p-6">
+                <h2 class="font-bold mb-4">Admin Mode</h2>
+                <div id="t-admin-stats" class="text-sm space-y-2">
+                    <p>本日：0件</p>
+                    <p>登録：1名</p>
+                </div>
+                <button onclick="showPage('user')" class="mt-8 w-full bg-slate-100 py-3 rounded-xl text-xs font-bold">Close</button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- フッター -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 text-[10px] text-slate-400 flex justify-around">
+        <span id="t-footer-law">特定商取引法</span>
+        <span id="t-footer-privacy">プライバシーポリシー</span>
+        <span>© Shige-chan</span>
+    </footer>
+
+    <script>
+        const translations = {
+            ja: {
+                "t-hero-title": "おたすけ代行", "t-hero-desc": "越谷からお届けする、安心の洗濯代行",
+                "t-order-title": "ご注文・お見積り", "t-btn-order": "今すぐ注文を確定する",
+                "p-name": "お名前", "p-addr": "集荷先住所",
+                "t-link-crew": "代行スタッフ（業務委託）登録はこちら",
+                "t-crew-title": "クルーパートナー登録", "t-crew-desc": "あなたの空き時間を報酬に変えましょう",
+                "t-upload-title": "本人確認書類の提出", "t-btn-apply": "パートナー登録を申請する",
+                "t-btn-back": "戻る", "t-footer-law": "特定商取引法", "t-footer-privacy": "プライバシーポリシー"
+            },
+            en: {
+                "t-hero-title": "Laundry Proxy", "t-hero-desc": "Safe laundry service from Koshigaya",
+                "t-order-title": "Order / Estimate", "t-btn-order": "Confirm Order Now",
+                "p-name": "Full Name", "p-addr": "Pickup Address",
+                "t-link-crew": "Click here for Crew Registration",
+                "t-crew-title": "Crew Partner", "t-crew-desc": "Turn your free time into rewards",
+                "t-upload-title": "ID Verification", "t-btn-apply": "Apply for Registration",
+                "t-btn-back": "Back", "t-footer-law": "Legal Notice", "t-footer-privacy": "Privacy Policy"
+            },
+            zh: {
+                "t-hero-title": "洗衣代办", "t-hero-desc": "来自越谷的安心洗衣服务",
+                "t-order-title": "订单 / 估价", "t-btn-order": "立即确认订单",
+                "p-name": "姓名", "p-addr": "取件地址",
+                "t-link-crew": "点击此处注册成为工作人员",
+                "t-crew-title": "合作伙伴注册", "t-crew-desc": "将您的空闲时间转化为报酬",
+                "t-upload-title": "身份证明文件", "t-btn-apply": "申请注册",
+                "t-btn-back": "返回", "t-footer-law": "法律声明", "t-footer-privacy": "隐私政策"
+            },
+            ko: {
+                "t-hero-title": "세탁 대행", "t-hero-desc": "코시가야의 안심 세탁 서비스",
+                "t-order-title": "주문 / 견적", "t-btn-order": "지금 바로 주문 확정",
+                "p-name": "이름", "p-addr": "수거 주소",
+                "t-link-crew": "스태프 등록은 여기를 클릭",
+                "t-crew-title": "크루 파트너 등록", "t-crew-desc": "자유 시간을 보상으로 바꾸세요",
+                "t-upload-title": "본인 확인 서류", "t-btn-apply": "등록 신청하기",
+                "t-btn-back": "뒤로", "t-footer-law": "법적 고지", "t-footer-privacy": "개인정보 처리방침"
+            }
+        };
+
+        function updateLanguage() {
+            const lang = document.getElementById('langSelect').value;
+            const t = translations[lang];
+            for (let id in t) {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (el.tagName === 'INPUT') el.placeholder = t[id];
+                    else el.innerText = t[id];
+                }
+            }
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page-node').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        // 初回読み込み時に日本語を適用
+        updateLanguage();
+    </script>
+</body>
+</html>
