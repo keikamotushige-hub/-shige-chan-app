@@ -3,126 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHIGE-CHAN Laundry Platform</title>
+    <title>SHIGE-CHAN Laundry & Reservation Proxy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .page-node { display: none; }
         .page-node.active { display: block; }
+        .star-rating { color: #ffbc00; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-900">
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans">
 
     <!-- ナビゲーション -->
-    <nav class="bg-white border-b sticky top-0 z-50">
+    <nav class="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
-            <span class="text-xl font-black text-orange-600 tracking-tighter">SHIGE-CHAN</span>
+            <span class="text-xl font-black text-orange-600 tracking-tighter" onclick="showPage('user')">SHIGE-CHAN</span>
             <div class="flex items-center gap-2">
-                <select id="langSelect" class="text-xs border rounded-md p-1 bg-orange-50 font-bold" onchange="updateLanguage()">
+                <select id="langSelect" class="text-xs border-2 border-orange-200 rounded-lg p-1 bg-white font-bold" onchange="updateLanguage()">
                     <option value="ja">日本語</option>
                     <option value="en">English</option>
-                    <option value="zh">中国語</option>
-                    <option value="ko">韓国語</option>
+                    <option value="zh">中文</option>
+                    <option value="ko">한국어</option>
                 </select>
-                <button onclick="showPage('admin')" class="text-slate-400"><i class="fa-solid fa-user-shield"></i></button>
+                <button onclick="showPage('admin')" class="text-slate-400 p-2"><i class="fa-solid fa-gauge-high"></i></button>
             </div>
         </div>
     </nav>
 
     <div class="max-w-md mx-auto pb-24">
 
-        <!-- 【1】お客様トップ -->
+        <!-- 【1】お客様モード -->
         <section id="page-user" class="page-node active p-4 space-y-6">
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-                <h2 id="t-hero-title" class="text-3xl font-bold italic">Laundry Proxy</h2>
-                <p id="t-hero-desc" class="mt-2 text-sm opacity-90">越谷からお届けする、安心の洗濯代行</p>
+            <div class="bg-gradient-to-r from-orange-500 to-orange-400 rounded-3xl p-6 text-white shadow-lg">
+                <h2 id="t-welcome" class="text-2xl font-bold">最高の代行サービスを</h2>
+                <div class="flex gap-4 mt-4">
+                    <button onclick="setService('laundry')" class="flex-1 bg-white/20 p-3 rounded-xl text-center backdrop-blur-sm border border-white/30">
+                        <i class="fa-solid fa-shirt mb-1"></i><p id="t-svc-laundry" class="text-[10px] font-bold">洗濯代行</p>
+                    </button>
+                    <button onclick="setService('reserve')" class="flex-1 bg-white/20 p-3 rounded-xl text-center backdrop-blur-sm border border-white/30">
+                        <i class="fa-solid fa-utensils mb-1"></i><p id="t-svc-reserve" class="text-[10px] font-bold">予約代行</p>
+                    </button>
+                </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
-                <h3 id="t-order-title" class="text-lg font-bold flex items-center gap-2 text-orange-600">ご注文</h3>
-                <input type="text" id="p-name" class="w-full p-4 bg-slate-50 rounded-xl ring-1 ring-slate-200 outline-none">
-                <input type="text" id="p-addr" class="w-full p-4 bg-slate-50 rounded-xl ring-1 ring-slate-200 outline-none">
-                <button id="t-btn-order" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-600 transition-all">注文確定</button>
+            <!-- 注文フォーム -->
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 space-y-4">
+                <h3 id="t-order-form" class="font-black text-lg text-slate-800 flex items-center gap-2">注文入力</h3>
+                <input type="text" id="p-name" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-orange-500">
+                <input type="text" id="p-addr" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-orange-500">
+                
+                <div class="space-y-2">
+                    <p id="t-pay-method" class="text-xs font-bold text-slate-500">お支払い方法</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-orange-50">
+                            <input type="radio" name="pay" value="cash" checked> <span class="text-sm" id="t-pay-cash">現金</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-orange-50">
+                            <input type="radio" name="pay" value="card"> <span class="text-sm" id="t-pay-card">クレジット</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="submitOrder()" id="t-btn-order" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-all">注文を確定する</button>
             </div>
 
-            <button onclick="showPage('crew')" id="t-link-crew" class="w-full text-sm font-bold text-slate-500 underline">代行スタッフ（業務委託）登録はこちら</button>
+            <!-- 評価表示 -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-100">
+                <p id="t-rating-title" class="text-xs font-bold text-slate-400 mb-2">最近の評価</p>
+                <div class="flex items-center gap-2">
+                    <span class="star-rating text-lg">★★★★★</span>
+                    <span class="font-bold">4.9</span>
+                    <span class="text-xs text-slate-400">(128 reviews)</span>
+                </div>
+            </div>
+
+            <button onclick="showPage('crew')" id="t-link-crew" class="w-full text-sm font-bold text-slate-400 underline py-4">代行スタッフ（業務委託）登録</button>
         </section>
 
-        <!-- 【2】クルー登録 -->
+        <!-- 【2】業務委託クルー・マイページ/登録 -->
         <section id="page-crew" class="page-node p-4 space-y-6">
-            <div class="bg-slate-800 rounded-3xl p-6 text-white">
-                <h2 id="t-crew-title" class="text-xl font-bold">Crew Partner</h2>
-                <p id="t-crew-desc" class="text-xs opacity-70">空き時間を報酬に変えましょう</p>
-            </div>
-            <div class="bg-white rounded-2xl border p-6 space-y-4">
-                <h3 id="t-upload-title" class="font-bold">本人確認書類</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 text-[10px]">Photo (Front)</div>
-                    <div class="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 text-[10px]">Photo (Back)</div>
+            <div class="bg-slate-800 rounded-3xl p-6 text-white flex justify-between items-center">
+                <div>
+                    <h2 id="t-crew-mode" class="text-xl font-bold">Crew Partner</h2>
+                    <p class="text-xs opacity-60">Status: <span class="text-green-400" id="t-crew-online">オンライン</span></p>
                 </div>
-                <button id="t-btn-apply" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl">申請する</button>
-                <button onclick="showPage('user')" id="t-btn-back" class="w-full text-slate-400 text-sm">戻る</button>
+                <i class="fa-solid fa-circle-user text-4xl"></i>
+            </div>
+
+            <!-- アカウント登録/書類アップロード -->
+            <div class="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+                <h3 id="t-upload-title" class="font-bold">本人確認・アカウント作成</h3>
+                <input type="text" placeholder="氏名 / Name" class="w-full p-3 border rounded-xl">
+                <div class="grid grid-cols-2 gap-4">
+                    <button class="aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400">
+                        <i class="fa-solid fa-id-card text-xl mb-1"></i><span class="text-[10px]">免許証(表)</span>
+                    </button>
+                    <button class="aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400">
+                        <i class="fa-solid fa-id-card text-xl mb-1"></i><span class="text-[10px]">免許証(裏)</span>
+                    </button>
+                </div>
+                <div class="p-3 bg-yellow-50 rounded-xl border border-yellow-100">
+                    <p id="t-pledge" class="text-[10px] text-yellow-800 leading-relaxed">
+                        【法的誓約】私は業務委託契約に同意し、反社会的勢力ではないことを誓約します。
+                    </p>
+                </div>
+                <button id="t-btn-apply" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl">登録申請する</button>
+                <button onclick="showPage('user')" id="t-btn-back" class="w-full text-slate-400 text-sm">お客様画面へ戻る</button>
             </div>
         </section>
 
-        <!-- 【3】管理者 -->
+        <!-- 【3】管理者画面 -->
         <section id="page-admin" class="page-node p-4">
-            <div class="bg-white rounded-2xl border p-6">
-                <h2 class="font-bold mb-4">Admin Mode</h2>
-                <div id="t-admin-stats" class="text-sm space-y-2">
-                    <p>本日：0件</p>
-                    <p>登録：1名</p>
+            <div class="bg-white rounded-3xl border shadow-xl p-6 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <h2 class="font-black text-xl">Admin</h2>
+                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">System Active</span>
                 </div>
-                <button onclick="showPage('user')" class="mt-8 w-full bg-slate-100 py-3 rounded-xl text-xs font-bold">Close</button>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-2xl text-center">
+                        <p class="text-[10px] text-slate-400 uppercase">Sales</p>
+                        <p class="text-xl font-black">¥0</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl text-center">
+                        <p class="text-[10px] text-slate-400 uppercase">Orders</p>
+                        <p class="text-xl font-black">0</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-slate-400">未承認クルー</p>
+                    <div class="p-3 bg-orange-50 rounded-xl flex justify-between items-center">
+                        <span class="text-sm font-bold">新しく1名の申請があります</span>
+                        <button class="text-xs bg-orange-500 text-white px-3 py-1 rounded-lg">確認</button>
+                    </div>
+                </div>
+                <button onclick="showPage('user')" class="w-full bg-slate-100 py-4 rounded-2xl font-bold text-slate-600">Close</button>
             </div>
         </section>
 
     </div>
 
-    <!-- フッター -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 text-[10px] text-slate-400 flex justify-around">
-        <span id="t-footer-law">特定商取引法</span>
-        <span id="t-footer-privacy">プライバシーポリシー</span>
-        <span>© Shige-chan</span>
+    <!-- フッター（法的表記・多言語） -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around text-[10px] text-slate-400 font-bold">
+        <a href="#" id="t-footer-law">特定商取引法</a>
+        <a href="#" id="t-footer-privacy">プライバシー</a>
+        <a href="#" id="t-footer-terms">利用規約</a>
+        <span>© SHIGE-CHAN</span>
     </footer>
 
     <script>
         const translations = {
             ja: {
-                "t-hero-title": "おたすけ代行", "t-hero-desc": "越谷からお届けする、安心の洗濯代行",
-                "t-order-title": "ご注文・お見積り", "t-btn-order": "今すぐ注文を確定する",
-                "p-name": "お名前", "p-addr": "集荷先住所",
-                "t-link-crew": "代行スタッフ（業務委託）登録はこちら",
-                "t-crew-title": "クルーパートナー登録", "t-crew-desc": "あなたの空き時間を報酬に変えましょう",
-                "t-upload-title": "本人確認書類の提出", "t-btn-apply": "パートナー登録を申請する",
-                "t-btn-back": "戻る", "t-footer-law": "特定商取引法", "t-footer-privacy": "プライバシーポリシー"
+                "t-welcome": "最高の代行サービスを", "t-svc-laundry": "洗濯代行", "t-svc-reserve": "予約代行",
+                "t-order-form": "注文入力", "p-name": "お名前", "p-addr": "住所/ホテル名/部屋番号",
+                "t-pay-method": "お支払い方法", "t-pay-cash": "現金", "t-pay-card": "クレジット",
+                "t-btn-order": "今すぐ注文を確定する", "t-rating-title": "評価実績",
+                "t-link-crew": "スタッフ登録（業務委託）", "t-crew-mode": "クルー専用画面",
+                "t-crew-online": "オンライン", "t-upload-title": "本人確認・アカウント作成",
+                "t-pledge": "【法的誓約】私は業務委託契約に同意し、反社会的勢力ではないことを誓約します。",
+                "t-btn-apply": "登録申請する", "t-btn-back": "お客様画面へ",
+                "t-footer-law": "特定商取引法", "t-footer-privacy": "プライバシー", "t-footer-terms": "利用規約"
             },
             en: {
-                "t-hero-title": "Laundry Proxy", "t-hero-desc": "Safe laundry service from Koshigaya",
-                "t-order-title": "Order / Estimate", "t-btn-order": "Confirm Order Now",
-                "p-name": "Full Name", "p-addr": "Pickup Address",
-                "t-link-crew": "Click here for Crew Registration",
-                "t-crew-title": "Crew Partner", "t-crew-desc": "Turn your free time into rewards",
-                "t-upload-title": "ID Verification", "t-btn-apply": "Apply for Registration",
-                "t-btn-back": "Back", "t-footer-law": "Legal Notice", "t-footer-privacy": "Privacy Policy"
+                "t-welcome": "Premium Proxy Service", "t-svc-laundry": "Laundry", "t-svc-reserve": "Reservation",
+                "t-order-form": "Order Form", "p-name": "Full Name", "p-addr": "Address/Hotel/Room No.",
+                "t-pay-method": "Payment Method", "t-pay-cash": "Cash", "t-pay-card": "Credit Card",
+                "t-btn-order": "Confirm Order Now", "t-rating-title": "Our Ratings",
+                "t-link-crew": "Join as Crew Partner", "t-crew-mode": "Crew Dashboard",
+                "t-crew-online": "Online", "t-upload-title": "Identity Verification",
+                "t-pledge": "Legal Pledge: I agree to the terms and verify I have no ties to antisocial forces.",
+                "t-btn-apply": "Submit Application", "t-btn-back": "Switch to User Mode",
+                "t-footer-law": "Legal Notice", "t-footer-privacy": "Privacy", "t-footer-terms": "Terms"
             },
             zh: {
-                "t-hero-title": "洗衣代办", "t-hero-desc": "来自越谷的安心洗衣服务",
-                "t-order-title": "订单 / 估价", "t-btn-order": "立即确认订单",
-                "p-name": "姓名", "p-addr": "取件地址",
-                "t-link-crew": "点击此处注册成为工作人员",
-                "t-crew-title": "合作伙伴注册", "t-crew-desc": "将您的空闲时间转化为报酬",
-                "t-upload-title": "身份证明文件", "t-btn-apply": "申请注册",
-                "t-btn-back": "返回", "t-footer-law": "法律声明", "t-footer-privacy": "隐私政策"
+                "t-welcome": "优质代办服务", "t-svc-laundry": "代洗衣服", "t-svc-reserve": "代办预约",
+                "t-order-form": "填写订单", "p-name": "姓名", "p-addr": "地址/酒店/房间号",
+                "t-pay-method": "支付方式", "t-pay-cash": "现金", "t-pay-card": "信用卡",
+                "t-btn-order": "立即确认订单", "t-rating-title": "评分",
+                "t-link-crew": "注册成为合作伙伴", "t-crew-mode": "工作人员面板",
+                "t-crew-online": "在线", "t-upload-title": "身份核验",
+                "t-pledge": "法律誓言：我同意条款并确认与反社会势力没有任何关系。",
+                "t-btn-apply": "提交申请", "t-btn-back": "返回客户界面",
+                "t-footer-law": "法律公告", "t-footer-privacy": "隐私", "t-footer-terms": "条款"
             },
             ko: {
-                "t-hero-title": "세탁 대행", "t-hero-desc": "코시가야의 안심 세탁 서비스",
-                "t-order-title": "주문 / 견적", "t-btn-order": "지금 바로 주문 확정",
-                "p-name": "이름", "p-addr": "수거 주소",
-                "t-link-crew": "스태프 등록은 여기를 클릭",
-                "t-crew-title": "크루 파트너 등록", "t-crew-desc": "자유 시간을 보상으로 바꾸세요",
-                "t-upload-title": "본인 확인 서류", "t-btn-apply": "등록 신청하기",
-                "t-btn-back": "뒤로", "t-footer-law": "법적 고지", "t-footer-privacy": "개인정보 처리방침"
+                "t-welcome": "프리미엄 대행 서비스", "t-svc-laundry": "세탁 대행", "t-svc-reserve": "예약 대행",
+                "t-order-form": "주문서 작성", "p-name": "성함", "p-addr": "주소/호텔/객실 번호",
+                "t-pay-method": "결제 방법", "t-pay-cash": "현금", "t-pay-card": "신용카드",
+                "t-btn-order": "지금 주문 확정", "t-rating-title": "평점",
+                "t-link-crew": "크루 파트너 등록", "t-crew-mode": "크루 대시보드",
+                "t-crew-online": "온라인", "t-upload-title": "본인 인증",
+                "t-pledge": "법적 서약: 나는 약관에 동의하며 반사회적 세력과 관계가 없음을 서약합니다.",
+                "t-btn-apply": "등록 신청하기", "t-btn-back": "사용자 화면으로",
+                "t-footer-law": "법적 고지", "t-footer-privacy": "개인정보", "t-footer-terms": "약관"
             }
         };
 
@@ -144,7 +216,17 @@
             window.scrollTo(0,0);
         }
 
-        // 初回読み込み時に日本語を適用
+        function setService(svc) {
+            alert(svc === 'laundry' ? '洗濯代行モードを選択しました' : '予約代行モードを選択しました');
+        }
+
+        function submitOrder() {
+            const name = document.getElementById('p-name').value;
+            const addr = document.getElementById('p-addr').value;
+            if(!name || !addr) { alert('入力してください / Please fill all fields'); return; }
+            alert('注文を送信しました！しげちゃんに通知が飛びます。\nOrdered successfully!');
+        }
+
         updateLanguage();
     </script>
 </body>
