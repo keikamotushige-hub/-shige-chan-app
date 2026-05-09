@@ -3,29 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHIGE-CHAN Laundry & Reservation Proxy</title>
+    <title>SHIGE-CHAN Laundry & Reservation Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .page-node { display: none; }
         .page-node.active { display: block; }
-        .star-rating { color: #ffbc00; }
+        .star-active { color: #f59e0b; }
+        .star-inactive { color: #d1d5db; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-900 font-sans">
+<body class="bg-slate-50 min-h-screen text-slate-900">
 
     <!-- ナビゲーション -->
     <nav class="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
-            <span class="text-xl font-black text-orange-600 tracking-tighter" onclick="showPage('user')">SHIGE-CHAN</span>
+            <span class="text-xl font-black text-orange-600 tracking-tighter cursor-pointer" onclick="showPage('user')">SHIGE-CHAN</span>
             <div class="flex items-center gap-2">
-                <select id="langSelect" class="text-xs border-2 border-orange-200 rounded-lg p-1 bg-white font-bold" onchange="updateLanguage()">
+                <select id="langSelect" class="text-xs border-2 border-orange-200 rounded-lg p-1 bg-white font-bold outline-none" onchange="updateLanguage()">
                     <option value="ja">日本語</option>
                     <option value="en">English</option>
                     <option value="zh">中文</option>
                     <option value="ko">한국어</option>
                 </select>
-                <button onclick="showPage('admin')" class="text-slate-400 p-2"><i class="fa-solid fa-gauge-high"></i></button>
+                <button onclick="showPage('admin')" class="text-slate-400 p-2 hover:text-orange-500"><i class="fa-solid fa-gauge-high"></i></button>
             </div>
         </div>
     </nav>
@@ -37,166 +38,196 @@
             <div class="bg-gradient-to-r from-orange-500 to-orange-400 rounded-3xl p-6 text-white shadow-lg">
                 <h2 id="t-welcome" class="text-2xl font-bold">最高の代行サービスを</h2>
                 <div class="flex gap-4 mt-4">
-                    <button onclick="setService('laundry')" class="flex-1 bg-white/20 p-3 rounded-xl text-center backdrop-blur-sm border border-white/30">
+                    <button onclick="selectService('laundry')" id="btn-svc-laundry" class="flex-1 bg-white/40 p-3 rounded-xl text-center border-2 border-white">
                         <i class="fa-solid fa-shirt mb-1"></i><p id="t-svc-laundry" class="text-[10px] font-bold">洗濯代行</p>
                     </button>
-                    <button onclick="setService('reserve')" class="flex-1 bg-white/20 p-3 rounded-xl text-center backdrop-blur-sm border border-white/30">
+                    <button onclick="selectService('reserve')" id="btn-svc-reserve" class="flex-1 bg-white/10 p-3 rounded-xl text-center border-2 border-transparent">
                         <i class="fa-solid fa-utensils mb-1"></i><p id="t-svc-reserve" class="text-[10px] font-bold">予約代行</p>
                     </button>
                 </div>
             </div>
 
-            <!-- 注文フォーム -->
             <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 space-y-4">
-                <h3 id="t-order-form" class="font-black text-lg text-slate-800 flex items-center gap-2">注文入力</h3>
-                <input type="text" id="p-name" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-orange-500">
-                <input type="text" id="p-addr" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-orange-500">
+                <h3 id="t-order-form" class="font-black text-lg text-slate-800">注文入力</h3>
+                <input type="text" id="p-name" placeholder="お名前" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-orange-500">
                 
-                <div class="space-y-2">
-                    <p id="t-pay-method" class="text-xs font-bold text-slate-500">お支払い方法</p>
+                <div class="relative">
+                    <input type="text" id="p-addr" placeholder="住所/ホテル名" class="w-full p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-orange-500">
+                    <button onclick="openMap()" class="absolute right-3 top-3 bg-white shadow-sm border p-2 rounded-xl text-orange-500 hover:bg-orange-50">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-2 pt-2">
+                    <p id="t-pay-method" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Payment Method</p>
                     <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-orange-50">
-                            <input type="radio" name="pay" value="cash" checked> <span class="text-sm" id="t-pay-cash">現金</span>
-                        </label>
-                        <label class="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-orange-50">
-                            <input type="radio" name="pay" value="card"> <span class="text-sm" id="t-pay-card">クレジット</span>
-                        </label>
+                        <button onclick="setPay('cash')" id="pay-cash" class="p-3 border-2 border-orange-500 rounded-xl bg-orange-50 text-sm font-bold">現金 / Cash</button>
+                        <button onclick="setPay('card')" id="pay-card" class="p-3 border-2 border-transparent rounded-xl bg-slate-50 text-sm font-bold">Card</button>
                     </div>
                 </div>
 
-                <button onclick="submitOrder()" id="t-btn-order" class="w-full bg-orange-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-all">注文を確定する</button>
-            </div>
-
-            <!-- 評価表示 -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-100">
-                <p id="t-rating-title" class="text-xs font-bold text-slate-400 mb-2">最近の評価</p>
-                <div class="flex items-center gap-2">
-                    <span class="star-rating text-lg">★★★★★</span>
-                    <span class="font-bold">4.9</span>
-                    <span class="text-xs text-slate-400">(128 reviews)</span>
+                <div class="bg-slate-900 p-4 rounded-2xl text-white flex justify-between items-center">
+                    <span id="t-total-label" class="font-bold">合計金額</span>
+                    <span class="text-xl font-black text-orange-400">¥3,500 <span class="text-[10px] text-white/60">~</span></span>
                 </div>
+
+                <button onclick="submitOrder()" id="t-btn-order" class="w-full bg-orange-500 text-white font-black py-5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-all text-lg">今すぐ注文を確定する</button>
             </div>
 
-            <button onclick="showPage('crew')" id="t-link-crew" class="w-full text-sm font-bold text-slate-400 underline py-4">代行スタッフ（業務委託）登録</button>
+            <!-- 評価システム -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-100 text-center">
+                <p id="t-rating-title" class="text-xs font-bold text-slate-400 mb-2 uppercase">Review this service</p>
+                <div class="flex justify-center gap-2 text-2xl mb-1">
+                    <i class="fa-solid fa-star star-active"></i><i class="fa-solid fa-star star-active"></i><i class="fa-solid fa-star star-active"></i><i class="fa-solid fa-star star-active"></i><i class="fa-solid fa-star star-active"></i>
+                </div>
+                <p class="font-black text-slate-700">4.9 / 5.0</p>
+            </div>
+
+            <button onclick="showPage('crew')" id="t-link-crew" class="w-full text-sm font-bold text-slate-400 underline py-4">代行スタッフ（業務委託）登録希望の方</button>
         </section>
 
-        <!-- 【2】業務委託クルー・マイページ/登録 -->
+        <!-- 【2】クルー（代行者）モード -->
         <section id="page-crew" class="page-node p-4 space-y-6">
             <div class="bg-slate-800 rounded-3xl p-6 text-white flex justify-between items-center">
                 <div>
                     <h2 id="t-crew-mode" class="text-xl font-bold">Crew Partner</h2>
-                    <p class="text-xs opacity-60">Status: <span class="text-green-400" id="t-crew-online">オンライン</span></p>
+                    <p class="text-xs opacity-60">Status: <span class="text-green-400" id="t-crew-online">審査待ち / Pending</span></p>
                 </div>
-                <i class="fa-solid fa-circle-user text-4xl"></i>
+                <i class="fa-solid fa-id-badge text-4xl text-orange-400"></i>
             </div>
 
-            <!-- アカウント登録/書類アップロード -->
-            <div class="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
-                <h3 id="t-upload-title" class="font-bold">本人確認・アカウント作成</h3>
-                <input type="text" placeholder="氏名 / Name" class="w-full p-3 border rounded-xl">
-                <div class="grid grid-cols-2 gap-4">
-                    <button class="aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400">
-                        <i class="fa-solid fa-id-card text-xl mb-1"></i><span class="text-[10px]">免許証(表)</span>
-                    </button>
-                    <button class="aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400">
-                        <i class="fa-solid fa-id-card text-xl mb-1"></i><span class="text-[10px]">免許証(裏)</span>
-                    </button>
+            <div class="bg-white rounded-3xl shadow-sm border p-6 space-y-6">
+                <h3 id="t-upload-title" class="font-black text-lg">本人確認・登録申請</h3>
+                
+                <div class="space-y-4">
+                    <p class="text-xs font-bold text-slate-500">1. 免許証（表・裏）をアップロード</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="aspect-square bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors">
+                            <i class="fa-solid fa-camera text-2xl text-slate-400 mb-2"></i>
+                            <span class="text-[10px] text-slate-500 font-bold">FRONT</span>
+                            <input type="file" class="hidden" onchange="handleFileUpload(this)">
+                        </label>
+                        <label class="aspect-square bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-orange-50 transition-colors">
+                            <i class="fa-solid fa-camera text-2xl text-slate-400 mb-2"></i>
+                            <span class="text-[10px] text-slate-500 font-bold">BACK</span>
+                            <input type="file" class="hidden" onchange="handleFileUpload(this)">
+                        </label>
+                    </div>
                 </div>
-                <div class="p-3 bg-yellow-50 rounded-xl border border-yellow-100">
-                    <p id="t-pledge" class="text-[10px] text-yellow-800 leading-relaxed">
-                        【法的誓約】私は業務委託契約に同意し、反社会的勢力ではないことを誓約します。
+
+                <div class="bg-yellow-50 p-4 rounded-2xl border border-yellow-200">
+                    <p id="t-pledge" class="text-[10px] text-yellow-800 leading-relaxed font-medium">
+                        【法的誓約】私は本サービスの業務委託契約条項に同意し、反社会的勢力と一切の関係がないことを誓約します。
                     </p>
+                    <div class="mt-3 flex items-center gap-2">
+                        <input type="checkbox" id="crew-agree" class="w-5 h-5 rounded accent-orange-500">
+                        <label for="crew-agree" class="text-xs font-black text-yellow-900">同意して申請する</label>
+                    </div>
                 </div>
-                <button id="t-btn-apply" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl">登録申請する</button>
-                <button onclick="showPage('user')" id="t-btn-back" class="w-full text-slate-400 text-sm">お客様画面へ戻る</button>
+
+                <button onclick="applyCrew()" id="t-btn-apply" class="w-full bg-slate-800 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all">パートナー登録を申請</button>
+                <button onclick="showPage('user')" id="t-btn-back" class="w-full text-slate-400 font-bold text-sm">お客様画面へ戻る</button>
             </div>
         </section>
 
-        <!-- 【3】管理者画面 -->
+        <!-- 【3】管理者ダッシュボード -->
         <section id="page-admin" class="page-node p-4">
-            <div class="bg-white rounded-3xl border shadow-xl p-6 space-y-6">
-                <div class="flex justify-between items-center border-b pb-4">
-                    <h2 class="font-black text-xl">Admin</h2>
-                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">System Active</span>
+            <div class="bg-white rounded-3xl border shadow-2xl overflow-hidden">
+                <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
+                    <h2 class="font-black text-xl italic text-orange-400">ADMIN CONTROL</h2>
+                    <span class="text-[10px] bg-green-500 px-2 py-1 rounded">LIVE</span>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-slate-50 p-4 rounded-2xl text-center">
-                        <p class="text-[10px] text-slate-400 uppercase">Sales</p>
-                        <p class="text-xl font-black">¥0</p>
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-2xl border">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">本日の売上</p>
+                            <p class="text-2xl font-black">¥0</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">稼働クルー</p>
+                            <p class="text-2xl font-black">1 <span class="text-xs text-slate-400">名</span></p>
+                        </div>
                     </div>
-                    <div class="bg-slate-50 p-4 rounded-2xl text-center">
-                        <p class="text-[10px] text-slate-400 uppercase">Orders</p>
-                        <p class="text-xl font-black">0</p>
+                    <div class="space-y-2">
+                        <p class="text-xs font-bold text-slate-500">承認待ちのアカウント</p>
+                        <div class="p-4 bg-orange-50 rounded-2xl flex justify-between items-center border border-orange-100">
+                            <div>
+                                <p class="text-sm font-bold">申請者: 鈴木 茂</p>
+                                <p class="text-[10px] text-slate-400">書類提出済み</p>
+                            </div>
+                            <button class="bg-orange-500 text-white text-[10px] font-bold px-4 py-2 rounded-xl">承認する</button>
+                        </div>
                     </div>
                 </div>
-                <div class="space-y-2">
-                    <p class="text-xs font-bold text-slate-400">未承認クルー</p>
-                    <div class="p-3 bg-orange-50 rounded-xl flex justify-between items-center">
-                        <span class="text-sm font-bold">新しく1名の申請があります</span>
-                        <button class="text-xs bg-orange-500 text-white px-3 py-1 rounded-lg">確認</button>
-                    </div>
-                </div>
-                <button onclick="showPage('user')" class="w-full bg-slate-100 py-4 rounded-2xl font-bold text-slate-600">Close</button>
+                <button onclick="showPage('user')" class="w-full bg-slate-100 py-4 text-slate-500 font-black text-xs uppercase tracking-widest border-t">Close Dashboard</button>
             </div>
         </section>
 
     </div>
 
-    <!-- フッター（法的表記・多言語） -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around text-[10px] text-slate-400 font-bold">
-        <a href="#" id="t-footer-law">特定商取引法</a>
-        <a href="#" id="t-footer-privacy">プライバシー</a>
-        <a href="#" id="t-footer-terms">利用規約</a>
-        <span>© SHIGE-CHAN</span>
+    <!-- フッター -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+        <a href="#" id="t-footer-law" class="hover:text-orange-500">特定商取引法</a>
+        <a href="#" id="t-footer-privacy" class="hover:text-orange-500">Privacy</a>
+        <a href="#" id="t-footer-terms" class="hover:text-orange-500">Terms</a>
+        <span>© SHIGE-CHAN 2026</span>
     </footer>
 
     <script>
+        // --- 翻訳データ ---
         const translations = {
             ja: {
                 "t-welcome": "最高の代行サービスを", "t-svc-laundry": "洗濯代行", "t-svc-reserve": "予約代行",
-                "t-order-form": "注文入力", "p-name": "お名前", "p-addr": "住所/ホテル名/部屋番号",
-                "t-pay-method": "お支払い方法", "t-pay-cash": "現金", "t-pay-card": "クレジット",
-                "t-btn-order": "今すぐ注文を確定する", "t-rating-title": "評価実績",
-                "t-link-crew": "スタッフ登録（業務委託）", "t-crew-mode": "クルー専用画面",
-                "t-crew-online": "オンライン", "t-upload-title": "本人確認・アカウント作成",
-                "t-pledge": "【法的誓約】私は業務委託契約に同意し、反社会的勢力ではないことを誓約します。",
-                "t-btn-apply": "登録申請する", "t-btn-back": "お客様画面へ",
+                "t-order-form": "注文入力", "p-name": "お名前", "p-addr": "住所/ホテル名",
+                "t-pay-method": "お支払い方法", "t-total-label": "参考合計金額",
+                "t-btn-order": "今すぐ注文を確定する", "t-rating-title": "このサービスの評価実績",
+                "t-link-crew": "代行スタッフ（業務委託）登録希望の方", "t-crew-mode": "クルー専用画面",
+                "t-crew-online": "審査待ち / Pending", "t-upload-title": "本人確認・登録申請",
+                "t-pledge": "【法的誓約】私は本サービスの業務委託契約条項に同意し、反社会的勢力と一切の関係がないことを誓約します。",
+                "t-btn-apply": "パートナー登録を申請", "t-btn-back": "戻る",
                 "t-footer-law": "特定商取引法", "t-footer-privacy": "プライバシー", "t-footer-terms": "利用規約"
             },
             en: {
                 "t-welcome": "Premium Proxy Service", "t-svc-laundry": "Laundry", "t-svc-reserve": "Reservation",
-                "t-order-form": "Order Form", "p-name": "Full Name", "p-addr": "Address/Hotel/Room No.",
-                "t-pay-method": "Payment Method", "t-pay-cash": "Cash", "t-pay-card": "Credit Card",
-                "t-btn-order": "Confirm Order Now", "t-rating-title": "Our Ratings",
-                "t-link-crew": "Join as Crew Partner", "t-crew-mode": "Crew Dashboard",
-                "t-crew-online": "Online", "t-upload-title": "Identity Verification",
+                "t-order-form": "Order Form", "p-name": "Your Name", "p-addr": "Address / Hotel Name",
+                "t-pay-method": "Payment Method", "t-total-label": "Estimated Total",
+                "t-btn-order": "Confirm Order Now", "t-rating-title": "Service Ratings",
+                "t-link-crew": "Become a Crew Partner", "t-crew-mode": "Crew Dashboard",
+                "t-crew-online": "Pending Approval", "t-upload-title": "Identity Verification",
                 "t-pledge": "Legal Pledge: I agree to the terms and verify I have no ties to antisocial forces.",
-                "t-btn-apply": "Submit Application", "t-btn-back": "Switch to User Mode",
+                "t-btn-apply": "Apply Now", "t-btn-back": "Back to Home",
                 "t-footer-law": "Legal Notice", "t-footer-privacy": "Privacy", "t-footer-terms": "Terms"
             },
             zh: {
-                "t-welcome": "优质代办服务", "t-svc-laundry": "代洗衣服", "t-svc-reserve": "代办预约",
-                "t-order-form": "填写订单", "p-name": "姓名", "p-addr": "地址/酒店/房间号",
-                "t-pay-method": "支付方式", "t-pay-cash": "现金", "t-pay-card": "信用卡",
-                "t-btn-order": "立即确认订单", "t-rating-title": "评分",
+                "t-welcome": "优质代办服务", "t-svc-laundry": "洗衣代办", "t-svc-reserve": "预约代办",
+                "t-order-form": "订单详情", "p-name": "您的姓名", "p-addr": "地址 / 酒店名称",
+                "t-pay-method": "支付方式", "t-total-label": "预计总计",
+                "t-btn-order": "立即确认订单", "t-rating-title": "服务评价",
                 "t-link-crew": "注册成为合作伙伴", "t-crew-mode": "工作人员面板",
-                "t-crew-online": "在线", "t-upload-title": "身份核验",
+                "t-crew-online": "审核中", "t-upload-title": "身份核验",
                 "t-pledge": "法律誓言：我同意条款并确认与反社会势力没有任何关系。",
-                "t-btn-apply": "提交申请", "t-btn-back": "返回客户界面",
-                "t-footer-law": "法律公告", "t-footer-privacy": "隐私", "t-footer-terms": "条款"
+                "t-btn-apply": "提交申请", "t-btn-back": "返回主页",
+                "t-footer-law": "法律声明", "t-footer-privacy": "隐私政策", "t-footer-terms": "条款"
             },
             ko: {
                 "t-welcome": "프리미엄 대행 서비스", "t-svc-laundry": "세탁 대행", "t-svc-reserve": "예약 대행",
-                "t-order-form": "주문서 작성", "p-name": "성함", "p-addr": "주소/호텔/객실 번호",
-                "t-pay-method": "결제 방법", "t-pay-cash": "현금", "t-pay-card": "신용카드",
-                "t-btn-order": "지금 주문 확정", "t-rating-title": "평점",
-                "t-link-crew": "크루 파트너 등록", "t-crew-mode": "크루 대시보드",
-                "t-crew-online": "온라인", "t-upload-title": "본인 인증",
+                "t-order-form": "주문서 작성", "p-name": "성함", "p-addr": "주소 / 호텔명",
+                "t-pay-method": "결제 방법", "t-total-label": "예상 합계",
+                "t-btn-order": "지금 주문 확정", "t-rating-title": "서비스 평점",
+                "t-link-crew": "크루 파트너 등록하기", "t-crew-mode": "크루 대시보드",
+                "t-crew-online": "승인 대기 중", "t-upload-title": "본인 인증",
                 "t-pledge": "법적 서약: 나는 약관에 동의하며 반사회적 세력과 관계가 없음을 서약합니다.",
-                "t-btn-apply": "등록 신청하기", "t-btn-back": "사용자 화면으로",
-                "t-footer-law": "법적 고지", "t-footer-privacy": "개인정보", "t-footer-terms": "약관"
+                "t-btn-apply": "등록 신청하기", "t-btn-back": "홈으로 돌아가기",
+                "t-footer-law": "법적 고지", "t-footer-privacy": "개인정보", "t-footer-terms": "이용약관"
             }
         };
+
+        // --- 基本的な動作 ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page-node').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            window.scrollTo(0,0);
+        }
 
         function updateLanguage() {
             const lang = document.getElementById('langSelect').value;
@@ -210,23 +241,72 @@
             }
         }
 
-        function showPage(pageId) {
-            document.querySelectorAll('.page-node').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-' + pageId).classList.add('active');
-            window.scrollTo(0,0);
+        // --- 注文関連機能 ---
+        function selectService(type) {
+            const laundryBtn = document.getElementById('btn-svc-laundry');
+            const reserveBtn = document.getElementById('btn-svc-reserve');
+            if(type === 'laundry') {
+                laundryBtn.classList.replace('bg-white/10', 'bg-white/40');
+                laundryBtn.classList.add('border-white');
+                reserveBtn.classList.replace('bg-white/40', 'bg-white/10');
+                reserveBtn.classList.remove('border-white');
+            } else {
+                reserveBtn.classList.replace('bg-white/10', 'bg-white/40');
+                reserveBtn.classList.add('border-white');
+                laundryBtn.classList.replace('bg-white/40', 'bg-white/10');
+                laundryBtn.classList.remove('border-white');
+            }
         }
 
-        function setService(svc) {
-            alert(svc === 'laundry' ? '洗濯代行モードを選択しました' : '予約代行モードを選択しました');
+        function setPay(method) {
+            const cash = document.getElementById('pay-cash');
+            const card = document.getElementById('pay-card');
+            if(method === 'cash') {
+                cash.className = "p-3 border-2 border-orange-500 rounded-xl bg-orange-50 text-sm font-bold";
+                card.className = "p-3 border-2 border-transparent rounded-xl bg-slate-50 text-sm font-bold";
+            } else {
+                card.className = "p-3 border-2 border-orange-500 rounded-xl bg-orange-50 text-sm font-bold";
+                cash.className = "p-3 border-2 border-transparent rounded-xl bg-slate-50 text-sm font-bold";
+            }
+        }
+
+        function openMap() {
+            const addr = document.getElementById('p-addr').value;
+            if(!addr) { alert('住所を入力してください / Please enter an address'); return; }
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`, '_blank');
         }
 
         function submitOrder() {
             const name = document.getElementById('p-name').value;
             const addr = document.getElementById('p-addr').value;
-            if(!name || !addr) { alert('入力してください / Please fill all fields'); return; }
-            alert('注文を送信しました！しげちゃんに通知が飛びます。\nOrdered successfully!');
+            if(!name || !addr) {
+                alert('すべての項目を入力してください\nPlease fill in all fields.');
+                return;
+            }
+            alert(`【注文完了】\n${name}様、ありがとうございます！\n場所：${addr}\nこれから代行スタッフの手配を開始します。`);
         }
 
+        // --- クルー関連機能 ---
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const label = input.parentElement;
+                label.classList.replace('bg-slate-50', 'bg-green-50');
+                label.classList.replace('border-slate-300', 'border-green-500');
+                label.querySelector('i').className = "fa-solid fa-check-circle text-2xl text-green-500 mb-2";
+                label.querySelector('span').innerText = "UPLOADED";
+            }
+        }
+
+        function applyCrew() {
+            const agree = document.getElementById('crew-agree').checked;
+            if(!agree) {
+                alert('誓約事項に同意してください\nPlease agree to the pledge.');
+                return;
+            }
+            alert('登録申請を受け付けました！\n管理者が書類を確認し、承認後に稼働可能になります。');
+        }
+
+        // 初期化
         updateLanguage();
     </script>
 </body>
