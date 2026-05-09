@@ -1,5 +1,247 @@
-<body style="background:orange; display:flex; justify-content:center; align-items:center; height:100vh;">
-    <button style="padding:50px; font-size:30px;" onclick="alert('動きました！')">
-        ここを押してください
-    </button>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SHIGE-CHAN Laundry Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans select-none">
+
+    <!-- ナビゲーション -->
+    <nav class="bg-white border-b sticky top-0 z-50 p-4 flex justify-between items-center shadow-sm">
+        <h1 class="text-xl font-black text-orange-600 tracking-tighter" onclick="showPage('user')">SHIGE-CHAN</h1>
+        <div class="flex items-center gap-2">
+            <select id="lang-select" onchange="switchLang()" class="text-[10px] border rounded p-1 font-bold bg-slate-100">
+                <option value="ja">日本語</option>
+                <option value="en">English</option>
+            </select>
+            <button onclick="showPage('admin')" class="text-slate-300 p-2"><i class="fa-solid fa-user-shield"></i></button>
+        </div>
+    </nav>
+
+    <main class="max-w-md mx-auto min-h-screen pb-24">
+        
+        <!-- 1. お客様 注文・見積画面 -->
+        <section id="page-user" class="page active p-4 space-y-6">
+            <div class="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl p-6 text-white shadow-xl">
+                <h2 id="t-hero-title" class="text-2xl font-black italic mb-1">おたすけ代行</h2>
+                <p id="t-hero-desc" class="text-[10px] opacity-90 mb-4 font-bold">越谷からお届けする、安心の洗濯・予約代行</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="setSvc(3500)" id="btn-laundry" class="bg-white/20 p-4 rounded-2xl border-2 border-white text-center">
+                        <i class="fa-solid fa-shirt text-2xl"></i><p id="t-svc-l" class="text-[10px] font-bold mt-1">洗濯代行</p>
+                    </button>
+                    <button onclick="setSvc(1500)" id="btn-reserve" class="bg-white/10 p-4 rounded-2xl border-2 border-transparent text-center">
+                        <i class="fa-solid fa-utensils text-2xl"></i><p id="t-svc-r" class="text-[10px] font-bold mt-1">予約代行</p>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-6 shadow-md border space-y-4">
+                <input type="text" id="cust-name" placeholder="お名前 / Name" class="w-full p-4 bg-slate-50 rounded-2xl border-0 ring-1 ring-slate-200 outline-none">
+                <div class="flex gap-2">
+                    <input type="text" id="hotel" placeholder="ホテル名・住所 / Address" class="flex-1 p-4 bg-slate-50 rounded-2xl border-0 ring-1 ring-slate-200">
+                    <button onclick="openMap()" class="bg-white border p-4 rounded-2xl text-orange-500 shadow-sm"><i class="fa-solid fa-location-dot"></i></button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="speed" onchange="calc()" class="p-3 bg-slate-50 rounded-xl font-bold text-xs border-0 ring-1 ring-slate-200">
+                        <option value="0" id="t-opt-n">通常配送 (翌日以降)</option>
+                        <option value="2000" id="t-opt-e">3時間特急 (+¥2000)</option>
+                    </select>
+                    <select id="pay" class="p-3 bg-slate-50 rounded-xl font-bold text-xs border-0 ring-1 ring-slate-200">
+                        <option value="cash" id="t-pay-c">現金払い</option>
+                        <option value="credit" id="t-pay-k">カード決済</option>
+                    </select>
+                </div>
+
+                <!-- 洗濯物に関する重要同意事項 -->
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                    <p class="text-[10px] font-black text-orange-700 underline">【重要】お預かり前の確認事項</p>
+                    <ul class="text-[9px] font-bold text-slate-600 list-disc pl-4 space-y-1">
+                        <li>洗えるもの：一般衣類、タオル、下着、寝具（薄手）</li>
+                        <li class="text-red-600">洗えないもの：高級ブランド、シルク、和服、皮革、毛皮、汚物付着物</li>
+                        <li>ポケットの中身（現金・貴重品）は必ず空にしてください。紛失の責任は負いかねます。</li>
+                        <li>色落ち・縮みに関する損害賠償は原則として応じられません。</li>
+                    </ul>
+                    <div class="pt-2 border-t flex items-start gap-2">
+                        <input type="checkbox" id="agree" class="mt-1 w-5 h-5 accent-orange-600">
+                        <label for="agree" id="t-terms" class="text-[10px] font-black text-slate-800 leading-tight">
+                            上記内容、利用規約、および反社会的勢力でないことに同意します。
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white p-5 rounded-2xl flex justify-between items-center shadow-inner">
+                    <span id="t-total-label" class="text-sm font-bold opacity-70">合計金額</span>
+                    <span id="display-total" class="text-2xl font-black text-orange-400">¥3,500</span>
+                </div>
+
+                <button id="t-btn-order" onclick="doOrder()" class="w-full bg-orange-500 text-white font-black py-5 rounded-2xl shadow-lg active:scale-95 transition-all text-xl">注文を確定する</button>
+            </div>
+            <button onclick="showPage('crew')" id="t-btn-crew-link" class="w-full text-slate-400 text-[10px] font-bold underline text-center">代行スタッフ（アカウント）登録はこちら</button>
+        </section>
+
+        <!-- 2. 代行スタッフ（クルー）登録・アカウント作成 -->
+        <section id="page-crew" class="page p-4 space-y-6">
+            <div class="bg-slate-800 rounded-3xl p-6 text-white shadow-xl">
+                <h2 class="text-xl font-black italic">Crew Account</h2>
+                <p class="text-[10px] opacity-60">配達員・代行スタッフ登録（要審査）</p>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-lg border space-y-4">
+                <input type="email" id="crew-email" placeholder="メールアドレス / Email" class="w-full p-4 bg-slate-50 rounded-2xl border-0 ring-1 ring-slate-200">
+                <input type="password" id="crew-pw" placeholder="パスワード設定 / Password" class="w-full p-4 bg-slate-50 rounded-2xl border-0 ring-1 ring-slate-200">
+                
+                <p class="text-[10px] font-black text-slate-400 uppercase">Identity Verification (身分証)</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="aspect-square bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer overflow-hidden">
+                        <input type="file" class="hidden" onchange="pv(this, 'pv1')">
+                        <div id="pv1" class="text-center p-2 text-slate-400"><i class="fa-solid fa-camera text-2xl mb-1"></i><p class="text-[8px] font-bold uppercase">Front (表)</p></div>
+                    </label>
+                    <label class="aspect-square bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer overflow-hidden">
+                        <input type="file" class="hidden" onchange="pv(this, 'pv2')">
+                        <div id="pv2" class="text-center p-2 text-slate-400"><i class="fa-solid fa-camera text-2xl mb-1"></i><p class="text-[8px] font-bold uppercase">Back (裏)</p></div>
+                    </label>
+                </div>
+                <div class="p-3 bg-yellow-50 rounded-xl text-[9px] font-bold text-yellow-800 leading-tight">
+                    報酬は一件あたり1,500円〜となります。審査通過後、本登録となります。
+                </div>
+                <button onclick="doReg()" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95">アカウントを作成して申請する</button>
+                <button onclick="showPage('user')" class="w-full text-slate-400 font-bold text-xs text-center italic">注文画面へ戻る</button>
+            </div>
+        </section>
+
+        <!-- 3. 管理者ダッシュボード -->
+        <section id="page-admin" class="page p-4 space-y-6">
+            <div class="bg-slate-900 rounded-3xl p-6 text-white flex justify-between items-end shadow-2xl">
+                <div><h2 class="text-xl font-black text-orange-500 uppercase italic">Admin Console</h2><p class="text-[9px] opacity-50 tracking-widest">REAL-TIME MANAGEMENT</p></div>
+                <div class="text-right"><p class="text-[9px] font-bold opacity-50 uppercase">Total Sales</p><p id="admin-sales" class="text-2xl font-black text-green-400">¥0</p></div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center px-1"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Orders</p></div>
+                <div id="history" class="space-y-3">
+                    <!-- JavaScriptでここに注文が追加される -->
+                </div>
+            </div>
+            <button onclick="showPage('user')" class="w-full py-6 text-slate-300 font-black text-[10px] tracking-[0.2em] border-t">CLOSE DASHBOARD</button>
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white/95 border-t p-4 flex justify-around text-[9px] font-black text-slate-400 z-50 backdrop-blur-md">
+        <span>特定商取引法</span><span>プライバシーポリシー</span><span>© Shige-chan 2026</span>
+    </footer>
+
+    <script>
+        const i18n = {
+            ja: {
+                heroT: "おたすけ代行", heroD: "越谷からお届けする、安心の洗濯・予約代行",
+                svcL: "洗濯代行", svcR: "予約代行", optN: "通常配送 (翌日以降)", optE: "3時間特急 (+¥2000)",
+                payC: "現金払い", payK: "カード決済", totalL: "合計金額", orderB: "注文を確定する",
+                crewL: "代行スタッフ（アカウント）登録はこちら", terms: "上記内容、利用規約、および反社会的勢力でないことに同意します。",
+                msgO: "【注文完了】ありがとうございます！代行スタッフがすぐに向かいます。", msgR: "【アカウント申請完了】審査を開始します。完了までお待ちください。"
+            },
+            en: {
+                heroT: "Proxy Service", heroD: "Safe Laundry & Booking from Koshigaya",
+                svcL: "Laundry", svcR: "Booking", optN: "Normal (Next Day)", optE: "3-Hour Express (+¥2000)",
+                payC: "Cash on delivery", payK: "Credit Card", totalL: "Total Amount", orderB: "Confirm Order",
+                crewL: "Become a Crew / Create Account", terms: "I agree to the terms, laundry rules, and anti-social policy.",
+                msgO: "Order Confirmed! Our staff is on the way.", msgR: "Account application sent! We will review it shortly."
+            }
+        };
+
+        let currentLang = 'ja';
+        let basePrice = 3500;
+        let totalSales = 0;
+
+        function switchLang() {
+            currentLang = document.getElementById('lang-select').value;
+            const t = i18n[currentLang];
+            document.getElementById('t-hero-title').innerText = t.heroT;
+            document.getElementById('t-hero-desc').innerText = t.heroD;
+            document.getElementById('t-svc-l').innerText = t.svcL;
+            document.getElementById('t-svc-r').innerText = t.svcR;
+            document.getElementById('t-opt-n').innerText = t.optN;
+            document.getElementById('t-opt-e').innerText = t.optE;
+            document.getElementById('t-pay-c').innerText = t.payC;
+            document.getElementById('t-pay-k').innerText = t.payK;
+            document.getElementById('t-total-label').innerText = t.totalL;
+            document.getElementById('t-btn-order').innerText = t.orderB;
+            document.getElementById('t-btn-crew-link').innerText = t.crewL;
+            document.getElementById('t-terms').innerText = t.terms;
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + id).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function setSvc(p) {
+            basePrice = p;
+            document.getElementById('btn-laundry').className = p === 3500 ? "bg-white/20 p-4 rounded-2xl border-2 border-white text-center" : "bg-white/10 p-4 rounded-2xl border-2 border-transparent text-center opacity-50";
+            document.getElementById('btn-reserve').className = p === 1500 ? "bg-white/20 p-4 rounded-2xl border-2 border-white text-center" : "bg-white/10 p-4 rounded-2xl border-2 border-transparent text-center opacity-50";
+            calc();
+        }
+
+        function calc() {
+            const s = parseInt(document.getElementById('speed').value);
+            document.getElementById('display-total').innerText = "¥" + (basePrice + s).toLocaleString();
+        }
+
+        function openMap() {
+            const h = document.getElementById('hotel').value;
+            if(!h) return alert("住所を入力してください");
+            window.open("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(h));
+        }
+
+        function doOrder() {
+            const name = document.getElementById('cust-name').value;
+            const hotel = document.getElementById('hotel').value;
+            if(!name || !hotel || !document.getElementById('agree').checked) {
+                alert("お名前・住所の入力と、規約への同意が必要です。");
+                return;
+            }
+            
+            const t = parseInt(document.getElementById('display-total').innerText.replace(/[¥,]/g, ''));
+            totalSales += t;
+            document.getElementById('admin-sales').innerText = "¥" + totalSales.toLocaleString();
+            
+            const hist = document.getElementById('history');
+            const row = document.createElement('div');
+            row.className = "bg-white p-4 rounded-2xl border-l-4 border-orange-500 shadow-sm flex justify-between items-center animate-pulse";
+            row.innerHTML = `<div><p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">${new Date().toLocaleTimeString()}</p><p class="text-sm font-black">${name} 様</p><p class="text-[9px] text-slate-500">${hotel}</p></div><div class="text-orange-600 font-black text-lg">¥${t.toLocaleString()}</div>`;
+            hist.prepend(row);
+            
+            alert(i18n[currentLang].msgO);
+        }
+
+        function pv(i, id) {
+            if (i.files && i.files[0]) {
+                const r = new FileReader();
+                r.onload = e => {
+                    const box = document.getElementById(id);
+                    box.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                    box.parentElement.classList.replace('border-slate-300', 'border-green-500');
+                }
+                r.readAsDataURL(i.files[0]);
+            }
+        }
+
+        function doReg() {
+            const email = document.getElementById('crew-email').value;
+            if(!email) return alert("メールアドレスを入力してください。");
+            alert(i18n[currentLang].msgR);
+            showPage('user');
+        }
+    </script>
 </body>
+</html>
