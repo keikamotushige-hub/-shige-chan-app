@@ -2,211 +2,70 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SHIGE-CHAN Laundry & Booking | Professional</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shige-chan Proxy Service</title>
     <style>
-        :root { --brand: #ff5a00; --dark: #0f172a; }
-        .view { display: none; }
-        .view.active { display: block; animation: pageIn 0.3s ease-out; }
-        @keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .glass { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); }
-        .btn-shige { transition: all 0.2s; background: var(--brand); color: white; font-weight: 900; }
-        .btn-shige:active { transform: scale(0.96); }
-        input, select { border: 1px solid #e2e8f0 !important; }
+        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; line-height: 1.6; }
+        header { text-align: center; margin-bottom: 30px; }
+        .card { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eee; }
+        select, textarea { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .terms { font-size: 14px; color: #666; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { width: 100%; padding: 15px; background: #0070f3; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status-msg { margin-top: 20px; color: green; font-weight: bold; text-align: center; display: none; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans">
+<body>
 
-    <!-- 1. ログイン・登録ゲートウェイ -->
-    <section id="view-auth" class="view active min-h-screen flex items-center justify-center p-4 bg-slate-900">
-        <div class="w-full max-w-md glass p-8 rounded-[2.5rem] shadow-2xl">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-black text-orange-500 italic tracking-tighter">SHIGE-CHAN</h1>
-                <div class="flex bg-slate-100 p-1 rounded-full mt-6">
-                    <button id="tab-login" onclick="setMode('login')" class="flex-1 py-2 text-[10px] font-black rounded-full bg-white shadow-sm">ログイン</button>
-                    <button id="tab-reg" onclick="setMode('reg')" class="flex-1 py-2 text-[10px] font-black rounded-full text-slate-500">新規登録</button>
-                </div>
-            </div>
+<header>
+    <h1 style="color: #0070f3; margin-bottom: 5px;">Shige-chan App</h1>
+    <p style="margin-top: 0;">洗濯代行・予約代行・並び代行</p>
+</header>
 
-            <div class="space-y-4">
-                <div id="reg-only" class="hidden space-y-4">
-                    <select id="reg-role" class="w-full p-4 rounded-2xl text-sm font-bold">
-                        <option value="user">お客様 (Customer)</option>
-                        <option value="staff">代行パートナー (Partner)</option>
-                    </select>
-                    <input type="text" id="reg-name" placeholder="氏名" class="w-full p-4 rounded-2xl text-sm">
-                    <input type="tel" id="reg-phone" placeholder="電話番号" class="w-full p-4 rounded-2xl text-sm">
-                    <div class="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-center text-slate-400">
-                        <i class="fa-solid fa-camera mb-2"></i>
-                        <p class="text-[9px] font-bold">身分証/パスポート 写真を添付</p>
-                        <input type="file" class="mt-2 text-[9px]">
-                    </div>
-                </div>
+<div class="card">
+    <strong>1. サービスを選択</strong>
+    <select id="service-type">
+        <option value="洗濯代行">👕 洗濯代行 (コインランドリー運搬)</option>
+        <option value="予約代行">📞 予約手続き代行 (事務サポート)</option>
+        <option value="並び代行">🚶 行列並び代行 (現場作業)</option>
+    </select>
+</div>
 
-                <input type="email" id="auth-email" placeholder="メールアドレス" class="w-full p-4 rounded-2xl text-sm outline-orange-500">
-                <input type="password" id="auth-pass" placeholder="パスワード" class="w-full p-4 rounded-2xl text-sm outline-orange-500">
+<div class="card">
+    <strong>2. 依頼内容の詳細</strong>
+    <textarea id="order-notes" placeholder="場所、時間、細かい指示を入力してください"></textarea>
+</div>
 
-                <button onclick="executeAuth()" id="btn-action" class="w-full py-4 btn-shige rounded-2xl shadow-lg">ログイン</button>
-                
-                <div class="text-center mt-6 border-t pt-4">
-                    <button onclick="setAdminMode()" class="text-[10px] font-bold text-slate-400 hover:text-orange-500 uppercase">
-                        <i class="fa-solid fa-crown"></i> Administrator Login
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
+<div class="terms">
+    <label>
+        <input type="checkbox" id="terms-checkbox" onchange="toggleButton()">
+        <strong>利用規約に同意する</strong>
+    </label>
+    <ul style="margin-top: 5px; padding-left: 20px;">
+        <li>本サービスは作業代行であり、結果を保証するものではありません。</li>
+        <li>衣類の損傷や予約不可時の責任は負いかねます。</li>
+        <li>法令を遵守し、迷惑行為となる並びは行いません。</li>
+    </ul>
+</div>
 
-    <!-- 2. 審査待ち -->
-    <section id="view-pending" class="view min-h-screen flex flex-col items-center justify-center p-10 text-center">
-        <div class="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-        <h2 class="text-2xl font-black italic">Wait for Approval</h2>
-        <p class="text-xs text-slate-500 mt-4 leading-relaxed">
-            現在、管理者 shigeme117 が身分証を確認中です。<br>いたずら防止のため、承認後に全機能が有効化されます。
-        </p>
-        <button onclick="location.reload()" class="mt-10 text-[10px] font-bold text-slate-400 underline uppercase tracking-widest">Login Back</button>
-    </section>
+<button id="order-button" onclick="submitOrder()" disabled>依頼を確定する</button>
 
-    <!-- 3. メインアプリ -->
-    <div id="app-container" class="hidden">
-        <nav class="bg-white border-b sticky top-0 z-50 p-4 flex justify-between items-center px-6">
-            <span class="font-black text-xl text-orange-600 italic tracking-tighter">SHIGE-CHAN</span>
-            <div class="flex items-center gap-4">
-                <span id="badge-role" class="text-[8px] font-black bg-slate-900 text-white px-3 py-1 rounded-full uppercase">USER</span>
-                <button onclick="location.reload()" class="text-slate-200 hover:text-red-500"><i class="fa-solid fa-power-off"></i></button>
-            </div>
-        </nav>
+<div id="status-msg">🔄 依頼を受け付けました。作業を開始します。</div>
 
-        <main id="app-content" class="max-w-md mx-auto p-4 pb-24"></main>
+<script>
+    function toggleButton() {
+        const checkbox = document.getElementById('terms-checkbox');
+        const button = document.getElementById('order-button');
+        button.disabled = !checkbox.checked;
+    }
 
-        <div id="tab-bar" class="fixed bottom-0 inset-x-0 bg-white border-t p-4 flex justify-around items-center">
-            <button class="text-orange-500 flex flex-col items-center"><i class="fa-solid fa-square-poll-vertical"></i><span class="text-[8px] font-bold mt-1 uppercase">Request</span></button>
-            <button class="text-slate-300 flex flex-col items-center"><i class="fa-solid fa-map-location-dot"></i><span class="text-[8px] font-bold mt-1 uppercase">Map</span></button>
-            <button class="text-slate-300 flex flex-col items-center"><i class="fa-solid fa-wallet"></i><span class="text-[8px] font-bold mt-1 uppercase">Wallet</span></button>
-        </div>
-    </div>
+    function submitOrder() {
+        const service = document.getElementById('service-type').value;
+        const msg = document.getElementById('status-msg');
+        alert(service + 'の依頼を確定しました。トラブル防止のため、現場写真を記録します。');
+        msg.style.display = 'block';
+    }
+</script>
 
-    <script>
-        let mode = 'login';
-        let db = {
-            users: [{ email: "shigeme117@yahoo.co.jp", pass: "117", name: "管理者", role: "admin", status: "approved" }],
-            orders: []
-        };
-        let currentUser = null;
-
-        function setMode(m) {
-            mode = m;
-            document.getElementById('reg-only').classList.toggle('hidden', m === 'login');
-            document.getElementById('btn-action').innerText = m === 'login' ? 'ログイン' : '登録申請を送信';
-            document.getElementById('tab-login').className = m === 'login' ? 'flex-1 py-2 text-[10px] font-black rounded-full bg-white shadow-sm' : 'flex-1 py-2 text-[10px] font-black rounded-full text-slate-500';
-            document.getElementById('tab-reg').className = m === 'reg' ? 'flex-1 py-2 text-[10px] font-black rounded-full bg-white shadow-sm' : 'flex-1 py-2 text-[10px] font-black rounded-full text-slate-500';
-        }
-
-        function setAdminMode() { setMode('login'); alert("管理者アカウントでログインしてください"); }
-
-        function executeAuth() {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
-            if (mode === 'reg') {
-                const name = document.getElementById('reg-name').value;
-                const role = document.getElementById('reg-role').value;
-                if(!name || !email || !pass) return alert("入力エラー: 全て入力してください");
-                db.users.push({ email, pass, name, role, status: 'pending' });
-                alert("申請完了。管理者の承認を待機しています。");
-                setMode('login');
-            } else {
-                const user = db.users.find(u => u.email === email && u.pass === pass);
-                if (!user) return alert("認証エラー: ログイン情報が違います");
-                currentUser = user;
-                if (user.status === 'pending') { switchView('view-pending'); }
-                else { switchView('app-container'); renderUI(); }
-            }
-        }
-
-        function renderUI() {
-            const main = document.getElementById('app-content');
-            document.getElementById('badge-role').innerText = currentUser.role;
-
-            if (currentUser.role === 'admin') {
-                main.innerHTML = `
-                    <div class="bg-slate-900 p-8 rounded-[2rem] text-white shadow-xl mb-6">
-                        <h2 class="text-xl font-black italic text-orange-500">Master Console</h2>
-                        <div class="grid grid-cols-2 gap-4 mt-6">
-                            <div class="bg-white/5 p-4 rounded-2xl"><p class="text-[8px] opacity-40">審査待ち</p><p class="text-lg font-black">${db.users.filter(u=>u.status==='pending').length}</p></div>
-                            <div class="bg-white/5 p-4 rounded-2xl"><p class="text-[8px] opacity-40">本日売上</p><p class="text-lg font-black">¥0</p></div>
-                        </div>
-                    </div>
-                    <h3 class="font-black text-[10px] text-slate-400 mb-4 px-2 tracking-widest uppercase">KYC / 承認待ちユーザー</h3>
-                    <div class="space-y-3">${renderAdminQueue()}</div>
-                `;
-            } else {
-                main.innerHTML = `
-                    <div class="space-y-4">
-                        <div class="bg-orange-600 p-8 rounded-[2.5rem] text-white shadow-xl mb-4 relative overflow-hidden">
-                            <h2 class="text-3xl font-black italic">Premium<br>Proxy Service</h2>
-                            <p class="text-[10px] mt-4 opacity-80 font-bold leading-relaxed">Uber Eats以上の信頼性。徒歩・自転車の機動力。<br>身分証認証済みのパートナーのみが対応します。</p>
-                        </div>
-                        
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Laundry Service (洗濯代行)</p>
-                        <button class="w-full bg-white p-6 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
-                            <div class="text-left"><span class="font-black">🧺 通常便 (3-5h)</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥4,000 / 管理:¥2,000</p></div>
-                            <span class="text-orange-600 font-black">¥6,000</span>
-                        </button>
-                        <button class="w-full bg-slate-900 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-xl">
-                            <div class="text-left"><span class="font-black text-orange-500">⚡ 最短便 (3h以内)</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥5,000 / 管理:¥3,000</p></div>
-                            <span class="font-black">¥8,000</span>
-                        </button>
-
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mt-6">Booking Proxy (予約・順番待ち代行)</p>
-                        <button class="w-full bg-white p-6 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
-                            <div class="text-left"><span class="font-black">📅 スタンダード予約</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥2,500 / 管理:¥1,500</p></div>
-                            <span class="text-orange-600 font-black text-lg">¥4,000</span>
-                        </button>
-                        <button class="w-full bg-white p-6 rounded-[2rem] border border-slate-100 flex justify-between items-center shadow-sm">
-                            <div class="text-left"><span class="font-black">👑 激戦店・深夜早朝</span><p class="text-[8px] text-slate-400 mt-1">報酬:¥4,000 / 管理:¥2,000</p></div>
-                            <span class="text-orange-600 font-black text-lg">¥6,000</span>
-                        </button>
-                        
-                        <div class="bg-white p-6 rounded-[2rem] border border-red-50 text-[9px] text-red-400 font-bold leading-relaxed">
-                            <p class="mb-2 text-red-600 uppercase tracking-widest text-[8px]">Terms of Service</p>
-                            ・いたずら・虚偽の依頼は即座にアカウント凍結・法的処置。<br>
-                            ・決済は事前クレジットまたは当日現金のみ対応。<br>
-                            ・管理者 shigeme117 はすべての取引を監視しています。
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function renderAdminQueue() {
-            const pending = db.users.filter(u => u.status === 'pending');
-            return pending.length ? pending.map(u => `
-                <div class="bg-white p-5 rounded-3xl border border-slate-100 flex justify-between items-center">
-                    <div><p class="font-black text-sm text-slate-800">${u.name}</p><p class="text-[8px] text-slate-400">${u.role.toUpperCase()} / ${u.email}</p></div>
-                    <div class="flex gap-2">
-                        <button onclick="approve('${u.email}')" class="bg-green-500 text-white text-[9px] font-black px-4 py-2 rounded-full shadow-lg">承認</button>
-                        <button class="bg-red-500 text-white text-[9px] font-black px-4 py-2 rounded-full shadow-lg">拒否</button>
-                    </div>
-                </div>
-            `).join('') : '<div class="p-10 text-center opacity-20 italic text-xs">No pending applications.</div>';
-        }
-
-        function approve(email) {
-            const u = db.users.find(user => user.email === email);
-            u.status = 'approved';
-            alert(`承認成功: ${u.name} 様がシステムを利用可能になりました。`);
-            renderUI();
-        }
-
-        function switchView(id) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('app-container').classList.add('hidden');
-            const target = document.getElementById(id);
-            if(target) target.classList.add('active');
-            if(id === 'app-container') target.classList.remove('hidden');
-        }
-    </script>
 </body>
 </html>
