@@ -3,90 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>お助け代行 - サービス画面</title>
+    <title>Shige-chan Laundry & Proxy</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #2563eb; --accent: #f59e0b; --light: #f8fafc; }
-        body { font-family: sans-serif; margin: 0; background: var(--light); color: #1e293b; }
-        .container { width: 95%; max-width: 500px; margin: 20px auto; padding: 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        h2 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; font-size: 1.2rem; color: var(--primary); }
-        .card { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left; }
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .btn-order { background: var(--primary); color: white; }
-        .btn-switch { background: white; border: 2px solid var(--primary); color: var(--primary); font-size: 0.8rem; }
-        .logout { color: #ef4444; font-size: 0.8rem; margin-top: 20px; cursor: pointer; }
+        :root { --primary: #2563eb; --accent: #f59e0b; --bg: #f8fafc; }
+        body { font-family: sans-serif; margin: 0; background: var(--bg); color: #1e293b; line-height: 1.6; }
+        .container { width: 95%; max-width: 500px; margin: 20px auto; padding: 25px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h1, h2 { text-align: center; color: var(--primary); }
+        .card { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid var(--primary); }
+        label { font-weight: bold; font-size: 0.9rem; display: block; margin-top: 10px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 1rem; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-google { background: white; border: 1px solid #ddd; color: #555; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-pay { background: #6772e5; color: white; }
+        .btn-switch { background: #f8fafc; border: 1px dashed var(--primary); color: var(--primary); font-size: 0.8rem; margin-bottom: 20px; }
         #auth-ui, #customer-ui, #admin-ui { display: none; }
+        .logout { color: #ef4444; font-size: 0.8rem; margin-top: 20px; cursor: pointer; text-align: center; display: block; }
     </style>
 </head>
 <body>
 
     <div id="auth-ui" class="container">
-        <h2>お助け代行 ログイン</h2>
+        <h1>お助け代行</h1>
+        <p style="text-align:center;">ランドリー代行＆御用聞き</p>
+        <button class="btn btn-google" onclick="signInWithGoogle()">
+            <img src="https://www.google.com/favicon.ico" width="20"> Googleでログイン
+        </button>
+        <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
         <input type="email" id="email" placeholder="メールアドレス">
         <input type="password" id="password" placeholder="パスワード">
-        <button class="btn btn-order" onclick="handleAuth()">ログイン / 新規登録</button>
-        <p id="msg"></p>
+        <button class="btn btn-main" onclick="handleEmailAuth()">ログイン / 新規登録</button>
+        <p id="msg" style="text-align:center; font-size:0.8rem;"></p>
     </div>
 
     <div id="customer-ui" class="container">
-        <button class="btn btn-switch" onclick="toggleView('admin')">代行者用画面へ切替</button>
-        <h2>📥 新しい依頼を送る</h2>
+        <button class="btn btn-switch" onclick="toggleView('admin')">🔄 代行者モードへ切替</button>
+        <h2>📥 サービスを依頼する</h2>
         <div class="card">
-            <label>依頼内容</label>
-            <textarea id="task" rows="3" placeholder="例：買い物代行、掃除など"></textarea>
-            <label>ご希望日時</label>
-            <input type="datetime-local" id="deadline">
-            <button class="btn btn-order" onclick="alert('依頼を送信しました！(DB保存は次のステップです)')">依頼を確定する</button>
+            <label>代行メニュー</label>
+            <select id="task_type">
+                <option value="laundry">🧺 ランドリー代行 (回収〜洗濯〜お届け)</option>
+                <option value="shopping">🛒 ついでに買い物代行 (日用品)</option>
+                <option value="other">💡 その他御用聞き</option>
+            </select>
+            <label>依頼の詳細内容</label>
+            <textarea id="details" rows="3" placeholder="例：洗濯物3kg、コンビニで牛乳1本など"></textarea>
+            <label>希望日時</label>
+            <input type="datetime-local" id="schedule">
+            <button class="btn btn-main" onclick="alert('依頼を送信しました！')">依頼を確定する</button>
         </div>
-        <div class="logout" onclick="handleLogout()">ログアウト</div>
+        <div class="card">
+            <h3>💳 お支払い</h3>
+            <button class="btn btn-pay" onclick="window.open(STRIPE_LINK, '_blank')">カードで支払う (Stripe)</button>
+        </div>
+        <span class="logout" onclick="handleLogout()">ログアウト</span>
     </div>
 
     <div id="admin-ui" class="container">
-        <button class="btn btn-switch" onclick="toggleView('customer')">お客様用画面へ切替</button>
-        <h2 style="color: var(--accent);">🛠 受付中の依頼リスト</h2>
-        <div id="task-list">
+        <button class="btn btn-switch" onclick="toggleView('customer')">🔄 お客様モードへ切替</button>
+        <h2>🛠 受付中の依頼リスト</h2>
+        <div id="order-list">
             <div class="card">
-                <strong>依頼者: sample@example.com</strong><br>
-                内容: エアコン掃除の代行<br>
-                <small>期限: 2026-05-20</small>
-                <button class="btn btn-order" style="background: var(--accent);">対応完了にする</button>
+                <p><strong>ランドリー代行依頼</strong><br>
+                <small>受付中：本日 15:00希望</small></p>
+                <button class="btn btn-main" style="padding:5px;">対応完了にする</button>
             </div>
         </div>
-        <div class="logout" onclick="handleLogout()">ログアウト</div>
+        <span class="logout" onclick="handleLogout()">ログアウト</span>
     </div>
 
     <script>
-        // ★★★ あなたのURLとキーをここに入れてください ★★★
-        const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★ 【ここだけ書き換えて完了です！】 ★★★
+        const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co';
+        const SUPABASE_ANON_KEY = 'あなたのキー';
+        const STRIPE_LINK = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV'; // 決済リンク
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function signInWithGoogle() {
+            await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+        }
+
+        async function handleEmailAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                await supabaseClient.auth.signUp({ email, password });
+                document.getElementById('msg').innerText = "確認メールを送信しました。";
+            } else {
+                checkSession();
+            }
+        }
 
         function toggleView(view) {
             document.getElementById('customer-ui').style.display = view === 'customer' ? 'block' : 'none';
             document.getElementById('admin-ui').style.display = view === 'admin' ? 'block' : 'none';
         }
 
-        async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            
-            if (error) {
-                await supabaseClient.auth.signUp({ email, password });
-                alert("確認メールを送りました");
-            } else {
-                checkSession();
-            }
-        }
-
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 document.getElementById('auth-ui').style.display = 'none';
-                // 最初はお客様画面を表示
                 toggleView('customer');
             } else {
                 document.getElementById('auth-ui').style.display = 'block';
