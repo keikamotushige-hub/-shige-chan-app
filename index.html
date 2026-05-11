@@ -7,53 +7,36 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; }
-        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-main { background: #007bff; color: white; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        #auth-ui, #customer-ui, #admin-ui, #kyc-ui { display: none; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: #007bff; color: white; margin-top: 10px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        #auth-ui, #customer-ui, #kyc-ui { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="auth-ui">
+        <div id="auth-ui" style="display: block;">
             <h2>しげちゃんランドリー</h2>
-            <p>本人確認システム</p>
             <input type="email" id="email" placeholder="メールアドレス">
             <input type="password" id="password" placeholder="パスワード">
-            <button class="btn btn-main" onclick="handleAuth()">ログイン / 新規登録</button>
+            <button class="btn" onclick="handleAuth()">ログイン / 登録</button>
         </div>
 
         <div id="kyc-ui">
-            <h3>本人確認（いたずら防止）</h3>
-            <p>安全な運営のため、身分証をアップロードしてください。</p>
+            <h3>本人確認が必要です</h3>
             <input type="file" id="id-photo" accept="image/*">
-            <button class="btn btn-main" onclick="submitKYC()">申請する</button>
+            <button class="btn" onclick="submitKYC()">申請する</button>
         </div>
 
         <div id="customer-ui">
-            <h2>🧺 注文メニュー</h2>
-            <div id="kyc-msg" style="color:red; font-weight:bold;"></div>
-            <div class="card">
-                <p>コースを選択</p>
-                <select id="course">
-                    <option value="normal">通常（翌日） - ¥3,500</option>
-                    <option value="express">3時間特急 - ¥7,500</option>
-                </select>
-                <button class="btn btn-main" onclick="alert('注文を受け付けました！')">予約する</button>
-            </div>
-        </div>
-
-        <div id="admin-ui">
-            <h2>📊 管理画面</h2>
-            <button class="btn btn-main" onclick="loadPendingKYC()">確認待ちリストを読み込む</button>
-            <div id="kyc-list"></div>
+            <h2>🧺 注文画面</h2>
+            <p id="kyc-status"></p>
+            <button class="btn" onclick="alert('注文受付！')">予約する</button>
         </div>
     </div>
 
     <script>
-        // *** ここに自分の情報を入れる ***
+        // ★ここだけあなたの情報に変えてください
         const SUPABASE_URL = 'https://kvpbuigigstkhhsitrvj.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
 
@@ -64,45 +47,33 @@
             const password = document.getElementById('password').value;
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
-                const { error: signUpError } = await supabaseClient.auth.signUp({ email, password });
-                if (signUpError) alert("エラー: " + signUpError.message);
-                else alert("確認メールを送りました。承認してください。");
+                await supabaseClient.auth.signUp({ email, password });
+                alert("確認メールを送りました");
             } else {
-                getUserProfile(data.user);
+                showUI(data.user);
             }
         }
 
-        async function getUserProfile(user) {
+        async function showUI(user) {
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
             document.getElementById('auth-ui').style.display = 'none';
-            if (!profile) return;
-            if (profile.role === 'admin') {
-                document.getElementById('admin-ui').style.display = 'block';
-            } else if (profile.kyc_status === 'none') {
+            if (profile.kyc_status === 'none') {
                 document.getElementById('kyc-ui').style.display = 'block';
             } else {
                 document.getElementById('customer-ui').style.display = 'block';
-                document.getElementById('kyc-msg').innerText = profile.kyc_status === 'pending' ? '⏳ 承認待ちです' : '✅ 本人確認済み';
+                document.getElementById('kyc-status').innerText = profile.kyc_status === 'pending' ? '⏳ 承認待ち' : '✅ 確認済み';
             }
         }
 
         async function submitKYC() {
-            const fileInput = document.getElementById('id-photo');
-            const file = fileInput.files[0];
-            if (!file) return alert("写真を選択してください");
-            
-            try {
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                const fileName = `id-${user.id}-${Date.now()}`;
-                
-                await supabaseClient.storage.from('id-docs').upload(fileName, file);
-                await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
-                
-                alert("申請しました！");
-                location.reload();
-            } catch (e) {
-                alert("失敗しました: " + e.message);
-            }
+            const file = document.getElementById('id-photo').files[0];
+            if (!file) return alert("画像を選んでください");
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const fileName = `id-${user.id}-${Date.now()}`;
+            await supabaseClient.storage.from('id-docs').upload(fileName, file);
+            await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
+            alert("申請しました！");
+            location.reload();
         }
     </script>
 </body>
