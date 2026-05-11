@@ -96,21 +96,23 @@
             }
         }
 
-        async function submitKYC() {
-            const file = document.getElementById('id-photo').files[0];
-            if (!file) return alert("写真を選択してください");
+            async function submitKYC() {
+        const fileInput = document.getElementById('id-photo');
+        const file = fileInput.files[0];
+        if (!file) return alert("写真を選択してください");
 
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const fileName = `id_${user.id}_${Date.now()}`;
+        // ログイン情報を正しく読み込む
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const fileName = `id-${user.id}-${Date.now()}`;
 
-            // Storageへアップロード
-            await supabaseClient.storage.from('id-docs').upload(fileName, file);
-            // DBを「確認待ち」に更新
-            await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
+        // 画像を保存し、データベースを更新する
+        await supabaseClient.storage.from('id-docs').upload(fileName, file);
+        await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
 
-            alert("申請しました！");
-            location.reload();
-        }
+        alert("申請しました！");
+        location.reload();
+    }
+
 
         async function loadPendingKYC() {
             const { data } = await supabaseClient.from('profiles').select('*').eq('kyc_status', 'pending');
