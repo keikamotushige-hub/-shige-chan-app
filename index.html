@@ -15,10 +15,11 @@
         .price-tag { font-size: 24px; font-weight: bold; text-align: center; color: var(--primary); margin: 10px 0; }
         label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px; }
         input, select, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        #map { width: 100%; height: 200px; background: #e9ecef; border-radius: 10px; margin-top: 10px; }
+        #map { width: 100%; height: 300px; background: #e9ecef; border-radius: 10px; margin-top: 10px; cursor: crosshair; }
         .agree-text { font-size: 13px; margin-left: 8px; vertical-align: middle; }
         .btn-main { background: var(--success); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; height: 60px; font-size: 20px; }
         .btn-main:disabled { background: #ccc; }
+        .hint { font-size: 12px; color: #666; margin-top: 5px; }
         hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
     </style>
 </head>
@@ -31,16 +32,32 @@
         <label>🌐 Language / 言語</label>
         <select id="lang-select">
             <option value="ja">日本語 (Japanese)</option>
-            <option value="en">English (Automatic Translation)</option>
-            <option value="zh">简体中文 (Chinese)</option>
-            <option value="ko">한국어 (Korean)</option>
-            <option value="vi">Tiếng Việt (Vietnamese)</option>
+            <option value="en">English</option>
+            <option value="zh">简体中文</option>
+            <option value="ko">한국어</option>
         </select>
     </div>
 
     <div class="card">
-        <label>🏨 Pickup Location (Hotel Name)</label>
-        <input type="text" id="pac-input" placeholder="Search your hotel...">
+        <label>🏨 Pickup Location / 集荷場所</label>
+        <p class="hint">リストから選ぶか、地図を直接タップしてピンを立ててください</p>
+        
+        <select id="hotel-select" onchange="onHotelChange()" style="margin-bottom:10px;">
+            <option value="">-- Select Hotel (Optional) --</option>
+            <optgroup label="Shinjuku / 新宿">
+                <option value="Keio Plaza Hotel Tokyo">京王プラザホテル</option>
+                <option value="Park Hyatt Tokyo">パークハイアット東京</option>
+                <option value="Hilton Tokyo">ヒルトン東京</option>
+            </optgroup>
+            <optgroup label="Minato / 港区">
+                <option value="Grand Hyatt Tokyo">グランドハイアット東京</option>
+                <option value="The Ritz-Carlton, Tokyo">リッツカールトン東京</option>
+                <option value="ANA InterContinental Tokyo">ANAインターコンチネンタル</option>
+            </optgroup>
+            <option value="Other">Other / その他（地図で指定）</option>
+        </select>
+        
+        <input type="text" id="pac-input" placeholder="Selected location name...">
         <div id="map">Map Loading...</div>
     </div>
 
@@ -55,9 +72,7 @@
     </div>
 
     <div class="card warning-card">
-        <label style="color:var(--danger)">⚠️ Prohibited Items (Cannot Wash)</label>
-        <p style="font-size:12px; margin:5px 0;">Suits, Coats, Leather, Silk, Cashmere, High-value items (>¥100k), Pet items, Oil-stained rags.</p>
-        <hr>
+        <label style="color:var(--danger)">⚠️ Agreement</label>
         <div style="font-size:14px;">
             <input type="checkbox" id="check-shrink" class="user-check"> <span class="agree-text">Agree to risk of shrinking/fading</span><br>
             <input type="checkbox" id="check-prohibited" class="user-check"> <span class="agree-text">No prohibited items included</span><br>
@@ -69,16 +84,47 @@
 </div>
 
 <script>
-    // --- 【重要】ここをお手持ちの情報に書き換えてください ---
-    const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co';
+    const SUPABASE_URL = 'https://ulqigitkhhnlttvj.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2cGJ1bHFpZ2l0a2hobmx0dHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjgyNjUsImV4cCI6MjA5Mzg0NDI2NX0.yXKCqhm2awIgavyWyD6pdiKE4vJoiLlfnMyn7UZiKeA';
-    // --------------------------------------------------
-
+    
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let map, marker, geocoder;
 
     function updateUI() {
         const price = document.getElementById('plan-select').value;
         document.getElementById('display-price').innerText = "¥" + Number(price).toLocaleString();
+    }
+
+    function onHotelChange() {
+        const select = document.getElementById('hotel-select');
+        const input = document.getElementById('pac-input');
+        if (select.value && select.value !== "Other") {
+            input.value = select.value;
+            searchLocation(select.value);
+        }
+    }
+
+    function searchLocation(address) {
+        geocoder.geocode({ address: address }, (results, status) => {
+            if (status === "OK") {
+                map.setCenter(results[0].geometry.location);
+                placeMarker(results[0].geometry.location);
+            }
+        });
+    }
+
+    // 地図上にピンを立てて、住所を取得する関数
+    function placeMarker(location) {
+        marker.setPosition(location);
+        marker.setVisible(true);
+        
+        // 逆ジオコーディング（座標から住所/場所名を取得）
+        geocoder.geocode({ location: location }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                document.getElementById('pac-input').value = results[0].formatted_address;
+            }
+        });
     }
 
     async function processOrder() {
@@ -87,7 +133,7 @@
         checks.forEach(c => { if(!c.checked) allOk = false; });
 
         if (!allOk) {
-            alert("Please agree to all terms.\nすべての項目に同意が必要です。");
+            alert("Agreement required.");
             return;
         }
 
@@ -96,31 +142,44 @@
         const planName = document.getElementById('plan-select').options[document.getElementById('plan-select').selectedIndex].text;
 
         if (!hotel) {
-            alert("Please enter location.\n場所を入力してください。");
+            alert("Please select a location on the map.");
             return;
         }
 
-        // Supabaseへ保存
         const { data, error } = await _supabase.from('orders').insert([
             { hotel_name: hotel, total_price: price, service_type: planName, status: 'pending' }
         ]);
 
         if (error) {
-            alert("System Error: " + error.message);
+            alert("Error: " + error.message);
         } else {
             alert("Success! Shige-chan will handle it.\n予約が完了しました！");
         }
     }
 
-    // Google Maps 初期化
     function initMap() {
+        geocoder = new google.maps.Geocoder();
         const defaultLoc = { lat: 35.6895, lng: 139.6917 };
-        const map = new google.maps.Map(document.getElementById("map"), {
+        map = new google.maps.Map(document.getElementById("map"), {
             center: defaultLoc, zoom: 15, disableDefaultUI: true
         });
+
+        marker = new google.maps.Marker({ map: map });
+
+        // --- 地図クリックイベントを追加 ---
+        map.addListener("click", (e) => {
+            placeMarker(e.latLng);
+        });
+
         const input = document.getElementById("pac-input");
         const autocomplete = new google.maps.places.Autocomplete(input);
-        autocomplete.bindTo("projection", map);
+        autocomplete.addListener("place_changed", () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                map.setCenter(place.geometry.location);
+                placeMarker(place.geometry.location);
+            }
+        });
     }
 </script>
 
