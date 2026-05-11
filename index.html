@@ -3,50 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shige-chan App - Login</title>
+    <title>お助け代行 - マイページ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #2563eb; --dark: #1e293b; --light: #f8fafc; }
-        body { font-family: sans-serif; margin: 0; background: var(--light); display: flex; flex-direction: column; min-height: 100vh; }
-        header { background: white; padding: 1rem 5%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .login-card { width: 90%; max-width: 400px; margin: auto; padding: 2.5rem; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
-        input { width: 100%; padding: 14px; margin-bottom: 1.2rem; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn-login { width: 100%; background: var(--primary); color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        body { font-family: sans-serif; margin: 0; background: var(--light); text-align: center; }
+        .container { width: 90%; max-width: 500px; margin: 50px auto; padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        input { width: 100%; padding: 14px; margin-bottom: 1.2rem; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; background: var(--primary); color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn:hover { opacity: 0.9; }
+        #auth-ui { display: block; }
+        #app-ui { display: none; } /* 最初は隠しておく */
+        .menu-item { background: #f1f5f9; padding: 15px; border-radius: 10px; text-align: left; margin-bottom: 10px; border-left: 5px solid var(--primary); }
+        .logout-btn { background: #ef4444; margin-top: 20px; font-size: 0.8rem; padding: 10px; }
     </style>
 </head>
 <body>
 
-    <header><h1>Shige-chan App</h1></header>
-
-    <div class="login-card">
-        <h2>ログイン</h2>
+    <div id="auth-ui" class="container">
+        <h2>お助け代行 ログイン</h2>
         <input type="email" id="email" placeholder="メールアドレス">
         <input type="password" id="password" placeholder="パスワード">
-        <button class="btn-login" onclick="handleAuth()">実行する</button>
-        <div id="message" style="margin-top:1rem; font-weight: bold;"></div>
+        <button class="btn" onclick="handleAuth()">実行する</button>
+        <p id="msg" style="margin-top:10px;"></p>
+    </div>
+
+    <div id="app-ui" class="container">
+        <h2 style="color: var(--primary);">認証完了</h2>
+        <h3 id="user-name">ようこそ！</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 2rem;">ここはログインした人専用の管理画面です</p>
+        
+        <div class="menu-item">📋 依頼リストの確認</div>
+        <div class="menu-item">💰 お支払い情報の管理</div>
+        <div class="menu-item">⚙️ 設定変更</div>
+        
+        <button class="btn logout-btn" onclick="handleLogout()">ログアウトして戻る</button>
     </div>
 
     <script>
-        // ★★★ 【ここを書き換えます】 ★★★
-
+        // ★★★ 先ほど成功したURLとキーをここに入れてください ★★★
         const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
-
-        // ★★★★★★★★★★★★★★★★★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 画面を切り替える命令
+        function showApp(userEmail) {
+            document.getElementById('auth-ui').style.display = 'none';
+            document.getElementById('app-ui').style.display = 'block';
+            document.getElementById('user-name').innerText = userEmail + " さん、ようこそ！";
+        }
 
         async function handleAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
             if (error) {
+                // ユーザーがいなければ登録を試みる
                 const { error: signUpError } = await supabaseClient.auth.signUp({ email, password });
-                document.getElementById('message').innerText = signUpError ? "エラーが発生しました" : "確認メールを送信しました！";
-                document.getElementById('message').style.color = "red";
+                document.getElementById('msg').innerText = signUpError ? "エラー: " + signUpError.message : "確認メールを送りました。メールを開いて承認してください。";
             } else {
-                document.getElementById('message').innerText = "ログイン成功！";
-                document.getElementById('message').style.color = "blue";
+                showApp(data.user.email); // 成功したら画面を切り替える
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            location.reload(); 
+        }
+
+        // ページを開いた時にログイン済みか自動チェック
+        window.onload = async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                showApp(session.user.email);
             }
         }
     </script>
