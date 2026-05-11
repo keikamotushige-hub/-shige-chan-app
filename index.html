@@ -3,78 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shige-chan Laundry KYC Edition</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Shige-chan Laundry Service</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: #007bff; color: white; margin-top: 10px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        #auth-ui, #customer-ui, #kyc-ui { display: none; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #007bff; font-size: 24px; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 10px; }
+        .warning-box { background: #fff5f5; border: 1px solid #ffcccc; color: #d32f2f; font-size: 14px; }
+        .warning-title { font-weight: bold; margin-bottom: 10px; display: block; }
+        #map { width: 100%; height: 250px; border-radius: 10px; background: #eee; margin-top: 10px; }
+        input[type="text"], select { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .checkbox-group { font-size: 14px; line-height: 1.6; }
+        .btn-order { width: 100%; padding: 18px; background: #28a745; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-order:hover { background: #218838; }
+        .price-display { font-size: 20px; font-weight: bold; text-align: center; margin: 15px 0; color: #007bff; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="auth-ui" style="display: block;">
-            <h2>しげちゃんランドリー</h2>
-            <input type="email" id="email" placeholder="メールアドレス">
-            <input type="password" id="password" placeholder="パスワード">
-            <button class="btn" onclick="handleAuth()">ログイン / 登録</button>
-        </div>
 
-        <div id="kyc-ui">
-            <h3>本人確認が必要です</h3>
-            <input type="file" id="id-photo" accept="image/*">
-            <button class="btn" onclick="submitKYC()">申請する</button>
-        </div>
+<div class="container">
+    <h1>🧺 Shige-chan Laundry</h1>
 
-        <div id="customer-ui">
-            <h2>🧺 注文画面</h2>
-            <p id="kyc-status"></p>
-            <button class="btn" onclick="alert('注文受付！')">予約する</button>
+    <div class="section">
+        <label>🌐 Language / 言語</label>
+        <select id="lang-select">
+            <option value="ja">日本語 (Japanese)</option>
+            <option value="en">English</option>
+            <option value="zh">中国語 (Chinese)</option>
+            <option value="ko">한국語 (Korean)</option>
+        </select>
+    </div>
+
+    <div class="section">
+        <label>🏨 Hotel Name / Pickup Location</label>
+        <input type="text" id="pac-input" placeholder="Search your hotel...">
+        <div id="map">地図を読み込み中... (APIキー設定後に表示)</div>
+    </div>
+
+    <div class="section">
+        <label>⚡ Select Plan</label>
+        <select id="plan-select" onchange="updatePrice()">
+            <option value="4500">Standard (24h) - ¥4,500</option>
+            <option value="6500">Express (3h) - ¥6,500</option>
+        </select>
+        <div class="price-display" id="total-price">Total: ¥4,500</div>
+    </div>
+
+    <div class="section warning-box">
+        <span class="warning-title">⚠️ Important: Items we CANNOT wash</span>
+        <ul style="padding-left: 20px; margin: 5px 0;">
+            <li>Suits, Coats, Wool, Silk, Cashmere</li>
+            <li>Leather, Kimonos, Ties</li>
+            <li>Heavy oil stains, Pet items</li>
+            <li>High-value items over ¥100,000</li>
+        </ul>
+        <hr>
+        <div class="checkbox-group">
+            <label><input type="checkbox" class="agree-check"> I agree to the risk of shrinking/fading.</label><br>
+            <label><input type="checkbox" class="agree-check"> No "Dry-clean only" items are included.</label><br>
+            <label><input type="checkbox" class="agree-check"> I agree to the Terms of Service.</label>
         </div>
     </div>
 
-    <script>
-        // ★ここだけあなたの情報に変えてください
-        const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
+    <button class="btn-order" onclick="submitOrder()">Confirm Reservation</button>
+</div>
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<script>
+    // 金額の自動更新
+    function updatePrice() {
+        const price = document.getElementById('plan-select').value;
+        document.getElementById('total-price').innerText = "Total: ¥" + Number(price).toLocaleString();
+    }
 
-        async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                await supabaseClient.auth.signUp({ email, password });
-                alert("確認メールを送りました");
-            } else {
-                showUI(data.user);
-            }
+    // 注文処理
+    function submitOrder() {
+        const checks = document.querySelectorAll('.agree-check');
+        let allChecked = true;
+        checks.forEach(c => { if(!c.checked) allChecked = false; });
+
+        if (!allChecked) {
+            alert("Please agree to all terms before booking.\nすべての項目にチェックを入れてください。");
+            return;
         }
 
-        async function showUI(user) {
-            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-            document.getElementById('auth-ui').style.display = 'none';
-            if (profile.kyc_status === 'none') {
-                document.getElementById('kyc-ui').style.display = 'block';
-            } else {
-                document.getElementById('customer-ui').style.display = 'block';
-                document.getElementById('kyc-status').innerText = profile.kyc_status === 'pending' ? '⏳ 承認待ち' : '✅ 確認済み';
-            }
+        const hotel = document.getElementById('pac-input').value;
+        if (!hotel) {
+            alert("Please enter your hotel name.\nホテル名を入力してください。");
+            return;
         }
 
-        async function submitKYC() {
-            const file = document.getElementById('id-photo').files[0];
-            if (!file) return alert("画像を選んでください");
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const fileName = `id-${user.id}-${Date.now()}`;
-            await supabaseClient.storage.from('id-docs').upload(fileName, file);
-            await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
-            alert("申請しました！");
-            location.reload();
-        }
-    </script>
+        alert("Reservation Confirmed!\n予約を受け付けました！しげちゃんランドリーをご利用いただきありがとうございます。");
+        // ここに将来的にSupabaseへの保存処理を書きます
+    }
+
+    // Googleマップの初期化用（APIキー取得後に動作）
+    function initMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 35.6895, lng: 139.6917 },
+            zoom: 15,
+        });
+        const input = document.getElementById("pac-input");
+        const autocomplete = new google.maps.places.Autocomplete(input);
+        // ...マップの詳細はAPIキー設定後に動きます
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script>
+
 </body>
 </html>
