@@ -6,20 +6,16 @@
     <title>Shige-chan Laundry KYC Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main: #007bff; --staff: #6f42c1; --admin: #28a745; --danger: #dc3545; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
-        .container { max-width: 500px; margin: auto; padding: 20px; background: white; min-height: 100vh; }
-        .card { border: 1px solid #ddd; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-main { background: var(--main); color: white; }
-        .btn-kyc { background: #555; color: white; font-size: 0.8rem; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .lang-sub { font-size: 0.8rem; color: #666; }
-        #auth-ui, #customer-ui, #staff-ui, #admin-ui, #kyc-ui { display: none; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-main { background: #007bff; color: white; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        #auth-ui, #customer-ui, #admin-ui, #kyc-ui { display: none; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <div id="auth-ui">
             <h2>しげちゃんランドリー</h2>
@@ -31,20 +27,16 @@
 
         <div id="kyc-ui">
             <h3>本人確認（いたずら防止）</h3>
-            <p class="lang-sub">法令遵守のため、身分証をアップロードしてください。</p>
-            <select id="id-type">
-                <option value="passport">パスポート (Passport)</option>
-                <option value="license">免許証 (License)</option>
-            </select>
+            <p>安全な運営のため、身分証をアップロードしてください。</p>
             <input type="file" id="id-photo" accept="image/*">
-            <button class="btn btn-kyc" onclick="submitKYC()">申請する (Submit)</button>
+            <button class="btn btn-main" onclick="submitKYC()">申請する</button>
         </div>
 
         <div id="customer-ui">
             <h2>🧺 注文メニュー</h2>
             <div id="kyc-msg" style="color:red; font-weight:bold;"></div>
             <div class="card">
-                <p>コース選択</p>
+                <p>コースを選択</p>
                 <select id="course">
                     <option value="normal">通常（翌日） - ¥3,500</option>
                     <option value="express">3時間特急 - ¥7,500</option>
@@ -55,19 +47,14 @@
 
         <div id="admin-ui">
             <h2>📊 管理画面</h2>
-            <div class="card" style="background:#e8f5e9;">
-                <button class="btn btn-kyc" onclick="loadPendingKYC()">確認待ちリストを読み込む</button>
-            </div>
+            <button class="btn btn-main" onclick="loadPendingKYC()">確認待ちリストを読み込む</button>
             <div id="kyc-list"></div>
         </div>
     </div>
 
     <script>
-        // ★★★ 設定値 ★★★
-        const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
-        // ★★★★★★★★★★★
-
+        const SUPABASE_URL = 'https://kvpbuigigstkhhsitrvj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2cGJ1aWdpZ3N0a2hoc2l0cnZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTE4Njk5MzksImV4cCI6MjAyNzQ0NTkzOX0.6F_jGdwXzV...'; // ここは自分のキーに直してください
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function handleAuth() {
@@ -85,50 +72,26 @@
         async function getUserProfile(user) {
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
             document.getElementById('auth-ui').style.display = 'none';
-
             if (profile.role === 'admin') {
                 document.getElementById('admin-ui').style.display = 'block';
             } else if (profile.kyc_status === 'none') {
                 document.getElementById('kyc-ui').style.display = 'block';
             } else {
                 document.getElementById('customer-ui').style.display = 'block';
-                document.getElementById('kyc-msg').innerText = profile.kyc_status === 'pending' ? "✅ 承認待ちです" : "✅ 本人確認済み";
+                document.getElementById('kyc-msg').innerText = profile.kyc_status === 'pending' ? '⏳ 承認待ちです' : '✅ 本人確認済み';
             }
         }
 
-            async function submitKYC() {
-        const fileInput = document.getElementById('id-photo');
-        const file = fileInput.files[0];
-        if (!file) return alert("写真を選択してください");
-
-        // ログイン情報を正しく読み込む
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const fileName = `id-${user.id}-${Date.now()}`;
-
-        // 画像を保存し、データベースを更新する
-        await supabaseClient.storage.from('id-docs').upload(fileName, file);
-        await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
-
-        alert("申請しました！");
-        location.reload();
-    }
-
-
-        async function loadPendingKYC() {
-            const { data } = await supabaseClient.from('profiles').select('*').eq('kyc_status', 'pending');
-            const listDiv = document.getElementById('kyc-list');
-            listDiv.innerHTML = data.map(u => `
-                <div class="card">
-                    <p>${u.id}</p>
-                    <button class="btn btn-main" onclick="approveKYC('${u.id}')">承認する</button>
-                </div>
-            `).join('');
-        }
-
-        async function approveKYC(uid) {
-            await supabaseClient.from('profiles').update({ kyc_status: 'verified' }).eq('id', uid);
-            alert("承認完了");
-            loadPendingKYC();
+        async function submitKYC() {
+            const fileInput = document.getElementById('id-photo');
+            const file = fileInput.files[0];
+            if (!file) return alert("写真を選択してください");
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const fileName = `id-${user.id}-${Date.now()}`;
+            await supabaseClient.storage.from('id-docs').upload(fileName, file);
+            await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
+            alert("申請しました！");
+            location.reload();
         }
     </script>
 </body>
