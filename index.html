@@ -1,124 +1,136 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shige-chan Laundry & Proxy</title>
+    <title>Shige-chan Laundry KYC Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #2563eb; --accent: #f59e0b; --bg: #f8fafc; }
-        body { font-family: sans-serif; margin: 0; background: var(--bg); color: #1e293b; line-height: 1.6; }
-        .container { width: 95%; max-width: 500px; margin: 20px auto; padding: 25px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h1, h2 { text-align: center; color: var(--primary); }
-        .card { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid var(--primary); }
-        label { font-weight: bold; font-size: 0.9rem; display: block; margin-top: 10px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 1rem; }
-        .btn-main { background: var(--primary); color: white; }
-        .btn-google { background: white; border: 1px solid #ddd; color: #555; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-pay { background: #6772e5; color: white; }
-        .btn-switch { background: #f8fafc; border: 1px dashed var(--primary); color: var(--primary); font-size: 0.8rem; margin-bottom: 20px; }
-        #auth-ui, #customer-ui, #admin-ui { display: none; }
-        .logout { color: #ef4444; font-size: 0.8rem; margin-top: 20px; cursor: pointer; text-align: center; display: block; }
+        :root { --main: #007bff; --staff: #6f42c1; --admin: #28a745; --danger: #dc3545; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
+        .container { max-width: 500px; margin: auto; padding: 20px; background: white; min-height: 100vh; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-main { background: var(--main); color: white; }
+        .btn-kyc { background: #555; color: white; font-size: 0.8rem; }
+        .kyc-status { color: var(--danger); font-weight: bold; font-size: 0.8rem; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .lang-sub { font-size: 0.8rem; color: #666; }
+        #auth-ui, #customer-ui, #staff-ui, #admin-ui, #kyc-ui { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="auth-ui" class="container">
-        <h1>お助け代行</h1>
-        <p style="text-align:center;">ランドリー代行＆御用聞き</p>
-        <button class="btn btn-google" onclick="signInWithGoogle()">
-            <img src="https://www.google.com/favicon.ico" width="20"> Googleでログイン
-        </button>
-        <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-        <input type="email" id="email" placeholder="メールアドレス">
-        <input type="password" id="password" placeholder="パスワード">
-        <button class="btn btn-main" onclick="handleEmailAuth()">ログイン / 新規登録</button>
-        <p id="msg" style="text-align:center; font-size:0.8rem;"></p>
-    </div>
+    <div class="container">
+        <div id="auth-ui">
+            <h2>Shige-chan Laundry</h2>
+            <p>Identity Verification System<br><span class="lang-sub">本人確認・不正防止システム</span></p>
+            <input type="email" id="email" placeholder="Email Address">
+            <input type="password" id="password" placeholder="Password">
+            <button class="btn btn-main" onclick="handleAuth()">Login / Sign Up</button>
+        </div>
 
-    <div id="customer-ui" class="container">
-        <button class="btn btn-switch" onclick="toggleView('admin')">🔄 代行者モードへ切替</button>
-        <h2>📥 サービスを依頼する</h2>
-        <div class="card">
-            <label>代行メニュー</label>
-            <select id="task_type">
-                <option value="laundry">🧺 ランドリー代行 (回収〜洗濯〜お届け)</option>
-                <option value="shopping">🛒 ついでに買い物代行 (日用品)</option>
-                <option value="other">💡 その他御用聞き</option>
+        <div id="kyc-ui">
+            <h3>KYC Verification<br><span class="lang-sub">本人確認（いたずら防止）</span></h3>
+            <p class="lang-sub">Please upload your ID to prevent trouble.<br>法令遵守のため、身分証をアップロードしてください。</p>
+            <label>ID Type / 身分証の種類</label>
+            <select id="id-type">
+                <option value="passport">Passport (for Tourist) / パスポート</option>
+                <option value="license">Driver License (50cc or under) / 原付免許(50cc以下)</option>
             </select>
-            <label>依頼の詳細内容</label>
-            <textarea id="details" rows="3" placeholder="例：洗濯物3kg、コンビニで牛乳1本など"></textarea>
-            <label>希望日時</label>
-            <input type="datetime-local" id="schedule">
-            <button class="btn btn-main" onclick="alert('依頼を送信しました！')">依頼を確定する</button>
+            <label>Upload ID Photo / 写真添付</label>
+            <input type="file" id="id-photo" accept="image/*">
+            <button class="btn btn-kyc" onclick="submitKYC()">Submit Verification / 申請する</button>
         </div>
-        <div class="card">
-            <h3>💳 お支払い</h3>
-            <button class="btn btn-pay" onclick="window.open(STRIPE_LINK, '_blank')">カードで支払う (Stripe)</button>
-        </div>
-        <span class="logout" onclick="handleLogout()">ログアウト</span>
-    </div>
 
-    <div id="admin-ui" class="container">
-        <button class="btn btn-switch" onclick="toggleView('customer')">🔄 お客様モードへ切替</button>
-        <h2>🛠 受付中の依頼リスト</h2>
-        <div id="order-list">
+        <div id="customer-ui">
+            <h2>🧺 Laundry Order</h2>
+            <div class="kyc-status">✅ KYC Verified (ID確認済み)</div>
             <div class="card">
-                <p><strong>ランドリー代行依頼</strong><br>
-                <small>受付中：本日 15:00希望</small></p>
-                <button class="btn btn-main" style="padding:5px;">対応完了にする</button>
+                <label>Course / コース</label>
+                <select id="course">
+                    <option value="normal">Normal (Next Day) - ¥3,500</option>
+                    <option value="express">3h Speed Express - ¥7,500</option>
+                </select>
+                <label>Payment / 支払</label>
+                <select id="pay">
+                    <option value="credit">Credit Card (Stripe)</option>
+                    <option value="cash">Cash (Local)</option>
+                </select>
+                <button class="btn btn-main" onclick="alert('Order Placed!')">Book Now</button>
             </div>
         </div>
-        <span class="logout" onclick="handleLogout()">ログアウト</span>
+
+        <div id="staff-ui">
+            <h2>🛠 Staff Menu</h2>
+            <div class="kyc-status">✅ 50cc License Verified</div>
+            <div class="card">
+                <h3>Today's Earning / 売上</h3>
+                <p>Cash: ¥3,500 / Credit: ¥7,500</p>
+                <p><strong>Total: ¥11,000</strong></p>
+            </div>
+            <div class="card">
+                <h3>New Job Near You</h3>
+                <p>Koshigaya Hotel Room 101</p>
+                <button class="btn btn-main">Accept</button>
+            </div>
+        </div>
+
+        <div id="admin-ui">
+            <h2>📊 Admin Panel</h2>
+            <div class="card" style="background:#e8f5e9;">
+                <h3>System Profit: ¥22,500</h3>
+                <p>Pending KYC: 3 users</p>
+                <button class="btn btn-kyc">Verify Users (KYCチェック)</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // ★★★ 【ここだけ書き換えて完了です！】 ★★★
-        const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co';
-        const SUPABASE_ANON_KEY = 'あなたのキー';
-        const STRIPE_LINK = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV'; // 決済リンク
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★ 下の3か所だけ書き換えてください ★★★
+        const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
+        const MY_ADMIN_EMAIL = 'shigeme117@yahoo.co.jp'; 
+        // ★★★★★★★★★★★★★★★★★★★★★★★
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function signInWithGoogle() {
-            await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
-        }
-
-        async function handleEmailAuth() {
+        async function handleAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
                 await supabaseClient.auth.signUp({ email, password });
-                document.getElementById('msg').innerText = "確認メールを送信しました。";
+                alert("Check your email for confirmation!");
             } else {
-                checkSession();
+                checkKYCStatus(data.user);
             }
         }
 
-        function toggleView(view) {
-            document.getElementById('customer-ui').style.display = view === 'customer' ? 'block' : 'none';
-            document.getElementById('admin-ui').style.display = view === 'admin' ? 'block' : 'none';
+        function checkKYCStatus(user) {
+            document.getElementById('auth-ui').style.display = 'none';
+            // 本来はDBのKYCフラグを見ますが、今回はデモ用に振り分け
+            if (user.email === MY_ADMIN_EMAIL) {
+                document.getElementById('admin-ui').style.display = 'block';
+            } else if (user.email.includes('staff')) {
+                document.getElementById('staff-ui').style.display = 'block';
+            } else {
+                // 新規ユーザーはまずKYC画面へ
+                document.getElementById('kyc-ui').style.display = 'block';
+            }
         }
 
-        async function checkSession() {
+        function submitKYC() {
+            alert("Application submitted! Admin will verify.\n申請を受け付けました。管理者の確認をお待ちください。");
+            document.getElementById('kyc-ui').style.display = 'none';
+            document.getElementById('customer-ui').style.display = 'block'; // 仮で移行
+        }
+
+        window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                document.getElementById('auth-ui').style.display = 'none';
-                toggleView('customer');
-            } else {
-                document.getElementById('auth-ui').style.display = 'block';
-            }
+            if (session) checkKYCStatus(session.user);
+            else document.getElementById('auth-ui').style.display = 'block';
         }
-
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            location.reload();
-        }
-
-        window.onload = checkSession;
     </script>
 </body>
 </html>
