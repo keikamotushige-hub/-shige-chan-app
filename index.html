@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>お助け代行 - マイページ</title>
+    <title>お助け代行 - サービス画面</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #2563eb; --dark: #1e293b; --light: #f8fafc; }
-        body { font-family: sans-serif; margin: 0; background: var(--light); text-align: center; }
-        .container { width: 90%; max-width: 500px; margin: 50px auto; padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-        input { width: 100%; padding: 14px; margin-bottom: 1.2rem; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; background: var(--primary); color: white; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; }
-        .btn:hover { opacity: 0.9; }
-        #auth-ui { display: block; }
-        #app-ui { display: none; } /* 最初は隠しておく */
-        .menu-item { background: #f1f5f9; padding: 15px; border-radius: 10px; text-align: left; margin-bottom: 10px; border-left: 5px solid var(--primary); }
-        .logout-btn { background: #ef4444; margin-top: 20px; font-size: 0.8rem; padding: 10px; }
+        :root { --primary: #2563eb; --accent: #f59e0b; --light: #f8fafc; }
+        body { font-family: sans-serif; margin: 0; background: var(--light); color: #1e293b; }
+        .container { width: 95%; max-width: 500px; margin: 20px auto; padding: 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        h2 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; font-size: 1.2rem; color: var(--primary); }
+        .card { background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-order { background: var(--primary); color: white; }
+        .btn-switch { background: white; border: 2px solid var(--primary); color: var(--primary); font-size: 0.8rem; }
+        .logout { color: #ef4444; font-size: 0.8rem; margin-top: 20px; cursor: pointer; }
+        #auth-ui, #customer-ui, #admin-ui { display: none; }
     </style>
 </head>
 <body>
@@ -24,64 +25,80 @@
         <h2>お助け代行 ログイン</h2>
         <input type="email" id="email" placeholder="メールアドレス">
         <input type="password" id="password" placeholder="パスワード">
-        <button class="btn" onclick="handleAuth()">実行する</button>
-        <p id="msg" style="margin-top:10px;"></p>
+        <button class="btn btn-order" onclick="handleAuth()">ログイン / 新規登録</button>
+        <p id="msg"></p>
     </div>
 
-    <div id="app-ui" class="container">
-        <h2 style="color: var(--primary);">認証完了</h2>
-        <h3 id="user-name">ようこそ！</h3>
-        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 2rem;">ここはログインした人専用の管理画面です</p>
-        
-        <div class="menu-item">📋 依頼リストの確認</div>
-        <div class="menu-item">💰 お支払い情報の管理</div>
-        <div class="menu-item">⚙️ 設定変更</div>
-        
-        <button class="btn logout-btn" onclick="handleLogout()">ログアウトして戻る</button>
+    <div id="customer-ui" class="container">
+        <button class="btn btn-switch" onclick="toggleView('admin')">代行者用画面へ切替</button>
+        <h2>📥 新しい依頼を送る</h2>
+        <div class="card">
+            <label>依頼内容</label>
+            <textarea id="task" rows="3" placeholder="例：買い物代行、掃除など"></textarea>
+            <label>ご希望日時</label>
+            <input type="datetime-local" id="deadline">
+            <button class="btn btn-order" onclick="alert('依頼を送信しました！(DB保存は次のステップです)')">依頼を確定する</button>
+        </div>
+        <div class="logout" onclick="handleLogout()">ログアウト</div>
+    </div>
+
+    <div id="admin-ui" class="container">
+        <button class="btn btn-switch" onclick="toggleView('customer')">お客様用画面へ切替</button>
+        <h2 style="color: var(--accent);">🛠 受付中の依頼リスト</h2>
+        <div id="task-list">
+            <div class="card">
+                <strong>依頼者: sample@example.com</strong><br>
+                内容: エアコン掃除の代行<br>
+                <small>期限: 2026-05-20</small>
+                <button class="btn btn-order" style="background: var(--accent);">対応完了にする</button>
+            </div>
+        </div>
+        <div class="logout" onclick="handleLogout()">ログアウト</div>
     </div>
 
     <script>
-        // ★★★ 先ほど成功したURLとキーをここに入れてください ★★★
+        // ★★★ あなたのURLとキーをここに入れてください ★★★
         const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
         // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 画面を切り替える命令
-        function showApp(userEmail) {
-            document.getElementById('auth-ui').style.display = 'none';
-            document.getElementById('app-ui').style.display = 'block';
-            document.getElementById('user-name').innerText = userEmail + " さん、ようこそ！";
+        function toggleView(view) {
+            document.getElementById('customer-ui').style.display = view === 'customer' ? 'block' : 'none';
+            document.getElementById('admin-ui').style.display = view === 'admin' ? 'block' : 'none';
         }
 
         async function handleAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             
             if (error) {
-                // ユーザーがいなければ登録を試みる
-                const { error: signUpError } = await supabaseClient.auth.signUp({ email, password });
-                document.getElementById('msg').innerText = signUpError ? "エラー: " + signUpError.message : "確認メールを送りました。メールを開いて承認してください。";
+                await supabaseClient.auth.signUp({ email, password });
+                alert("確認メールを送りました");
             } else {
-                showApp(data.user.email); // 成功したら画面を切り替える
+                checkSession();
+            }
+        }
+
+        async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                document.getElementById('auth-ui').style.display = 'none';
+                // 最初はお客様画面を表示
+                toggleView('customer');
+            } else {
+                document.getElementById('auth-ui').style.display = 'block';
             }
         }
 
         async function handleLogout() {
             await supabaseClient.auth.signOut();
-            location.reload(); 
+            location.reload();
         }
 
-        // ページを開いた時にログイン済みか自動チェック
-        window.onload = async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                showApp(session.user.email);
-            }
-        }
+        window.onload = checkSession;
     </script>
 </body>
 </html>
