@@ -3,112 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shige-chan Laundry Service</title>
+    <title>Shige-chan Laundry - Global Laundry Proxy</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #007bff; font-size: 24px; }
-        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 10px; }
-        .warning-box { background: #fff5f5; border: 1px solid #ffcccc; color: #d32f2f; font-size: 14px; }
-        .warning-title { font-weight: bold; margin-bottom: 10px; display: block; }
-        #map { width: 100%; height: 250px; border-radius: 10px; background: #eee; margin-top: 10px; }
-        input[type="text"], select { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .checkbox-group { font-size: 14px; line-height: 1.6; }
-        .btn-order { width: 100%; padding: 18px; background: #28a745; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-order:hover { background: #218838; }
-        .price-display { font-size: 20px; font-weight: bold; text-align: center; margin: 15px 0; color: #007bff; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f8f9fa; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: #333; line-height: 1.5; }
+        .app-container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--primary); font-size: 22px; margin-bottom: 20px; }
+        .card { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .warning-card { border: 2px solid var(--danger); background: #fff5f5; }
+        .price-tag { font-size: 24px; font-weight: bold; text-align: center; color: var(--primary); margin: 10px 0; }
+        label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px; }
+        input, select, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        #map { width: 100%; height: 200px; background: #e9ecef; border-radius: 10px; margin-top: 10px; }
+        .agree-text { font-size: 13px; margin-left: 8px; vertical-align: middle; }
+        .btn-main { background: var(--success); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; height: 60px; font-size: 20px; }
+        .btn-main:disabled { background: #ccc; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="app-container">
     <h1>🧺 Shige-chan Laundry</h1>
 
-    <div class="section">
+    <div class="card">
         <label>🌐 Language / 言語</label>
         <select id="lang-select">
             <option value="ja">日本語 (Japanese)</option>
-            <option value="en">English</option>
-            <option value="zh">中国語 (Chinese)</option>
-            <option value="ko">한국語 (Korean)</option>
+            <option value="en">English (Automatic Translation)</option>
+            <option value="zh">简体中文 (Chinese)</option>
+            <option value="ko">한국어 (Korean)</option>
+            <option value="vi">Tiếng Việt (Vietnamese)</option>
         </select>
     </div>
 
-    <div class="section">
-        <label>🏨 Hotel Name / Pickup Location</label>
+    <div class="card">
+        <label>🏨 Pickup Location (Hotel Name)</label>
         <input type="text" id="pac-input" placeholder="Search your hotel...">
-        <div id="map">地図を読み込み中... (APIキー設定後に表示)</div>
+        <div id="map">Map Loading...</div>
     </div>
 
-    <div class="section">
-        <label>⚡ Select Plan</label>
-        <select id="plan-select" onchange="updatePrice()">
-            <option value="4500">Standard (24h) - ¥4,500</option>
-            <option value="6500">Express (3h) - ¥6,500</option>
+    <div class="card">
+        <label>⚡ Select Service</label>
+        <select id="plan-select" onchange="updateUI()">
+            <option value="4500">Standard Plan (24h) - ¥4,500</option>
+            <option value="6500">Express Plan (3h) - ¥6,500</option>
+            <option value="3000">Restaurant/Golf Booking Proxy - ¥3,000</option>
         </select>
-        <div class="price-display" id="total-price">Total: ¥4,500</div>
+        <div class="price-tag" id="display-price">¥4,500</div>
     </div>
 
-    <div class="section warning-box">
-        <span class="warning-title">⚠️ Important: Items we CANNOT wash</span>
-        <ul style="padding-left: 20px; margin: 5px 0;">
-            <li>Suits, Coats, Wool, Silk, Cashmere</li>
-            <li>Leather, Kimonos, Ties</li>
-            <li>Heavy oil stains, Pet items</li>
-            <li>High-value items over ¥100,000</li>
-        </ul>
+    <div class="card warning-card">
+        <label style="color:var(--danger)">⚠️ Prohibited Items (Cannot Wash)</label>
+        <p style="font-size:12px; margin:5px 0;">Suits, Coats, Leather, Silk, Cashmere, High-value items (>¥100k), Pet items, Oil-stained rags.</p>
         <hr>
-        <div class="checkbox-group">
-            <label><input type="checkbox" class="agree-check"> I agree to the risk of shrinking/fading.</label><br>
-            <label><input type="checkbox" class="agree-check"> No "Dry-clean only" items are included.</label><br>
-            <label><input type="checkbox" class="agree-check"> I agree to the Terms of Service.</label>
+        <div style="font-size:14px;">
+            <input type="checkbox" id="check-shrink" class="user-check"> <span class="agree-text">Agree to risk of shrinking/fading</span><br>
+            <input type="checkbox" id="check-prohibited" class="user-check"> <span class="agree-text">No prohibited items included</span><br>
+            <input type="checkbox" id="check-privacy" class="user-check"> <span class="agree-text">Agree to Terms & ID Check</span>
         </div>
     </div>
 
-    <button class="btn-order" onclick="submitOrder()">Confirm Reservation</button>
+    <button class="btn-main" id="order-btn" onclick="processOrder()">Confirm & Pay</button>
 </div>
 
 <script>
-    // 金額の自動更新
-    function updatePrice() {
+    // --- 【重要】ここをお手持ちの情報に書き換えてください ---
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    // --------------------------------------------------
+
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function updateUI() {
         const price = document.getElementById('plan-select').value;
-        document.getElementById('total-price').innerText = "Total: ¥" + Number(price).toLocaleString();
+        document.getElementById('display-price').innerText = "¥" + Number(price).toLocaleString();
     }
 
-    // 注文処理
-    function submitOrder() {
-        const checks = document.querySelectorAll('.agree-check');
-        let allChecked = true;
-        checks.forEach(c => { if(!c.checked) allChecked = false; });
+    async function processOrder() {
+        const checks = document.querySelectorAll('.user-check');
+        let allOk = true;
+        checks.forEach(c => { if(!c.checked) allOk = false; });
 
-        if (!allChecked) {
-            alert("Please agree to all terms before booking.\nすべての項目にチェックを入れてください。");
+        if (!allOk) {
+            alert("Please agree to all terms.\nすべての項目に同意が必要です。");
             return;
         }
 
         const hotel = document.getElementById('pac-input').value;
+        const price = document.getElementById('plan-select').value;
+        const planName = document.getElementById('plan-select').options[document.getElementById('plan-select').selectedIndex].text;
+
         if (!hotel) {
-            alert("Please enter your hotel name.\nホテル名を入力してください。");
+            alert("Please enter location.\n場所を入力してください。");
             return;
         }
 
-        alert("Reservation Confirmed!\n予約を受け付けました！しげちゃんランドリーをご利用いただきありがとうございます。");
-        // ここに将来的にSupabaseへの保存処理を書きます
+        // Supabaseへ保存
+        const { data, error } = await _supabase.from('orders').insert([
+            { hotel_name: hotel, total_price: price, service_type: planName, status: 'pending' }
+        ]);
+
+        if (error) {
+            alert("System Error: " + error.message);
+        } else {
+            alert("Success! Shige-chan will handle it.\n予約が完了しました！");
+        }
     }
 
-    // Googleマップの初期化用（APIキー取得後に動作）
+    // Google Maps 初期化
     function initMap() {
+        const defaultLoc = { lat: 35.6895, lng: 139.6917 };
         const map = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: 35.6895, lng: 139.6917 },
-            zoom: 15,
+            center: defaultLoc, zoom: 15, disableDefaultUI: true
         });
         const input = document.getElementById("pac-input");
         const autocomplete = new google.maps.places.Autocomplete(input);
-        // ...マップの詳細はAPIキー設定後に動きます
+        autocomplete.bindTo("projection", map);
     }
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap" async defer></script>
 
 </body>
 </html>
