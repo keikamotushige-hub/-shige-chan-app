@@ -1,123 +1,101 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <script>
-        // ★★★ 【ここを自分の情報に書き換えてください】 ★★★
-        const SUPABASE_URL = "https://kvpbulqigitkhhnlttvj.supabase.co"; // URLはこれでOK
-        const SUPABASE_KEY = "sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV";
-        const ADMIN_EMAIL  = "shigeme117@yahoo.co.jp";
-        // ★★★ 【書き換えここまで】 ★★★
-    </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shige-chan Proxy Service</title>
+    <title>お助け代行サービス</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; line-height: 1.6; }
         header { text-align: center; margin-bottom: 30px; }
-        .card { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eee; }
+        .card { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; }
         .hidden { display: none; }
-        select, textarea, input { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .terms { font-size: 14px; color: #666; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        button { width: 100%; padding: 15px; background: #0070f3; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        .order-item { border-left: 5px solid #0070f3; padding: 15px; margin-bottom: 15px; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
+        select, textarea, input { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background: #0070f3; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .order-item { border-left: 5px solid #0070f3; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 0 5px 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="color: #0070f3; margin-bottom: 5px;">Shige-chan App</h1>
+    <h1 style="color: #0070f3;">Shige-chan App</h1>
 </header>
 
 <div id="view-auth" class="card">
     <h2 style="text-align:center;">ログイン</h2>
-    <input type="email" id="email" placeholder="メールアドレス">
-    <input type="password" id="password" placeholder="パスワード">
-    <button onclick="handleAuth()">ログイン / 新規登録</button>
+    <input type="email" id="auth-email" placeholder="メールアドレス">
+    <input type="password" id="auth-password" placeholder="パスワード">
+    <button id="btn-auth">ログイン / 新規登録</button>
 </div>
 
-<div id="view-user" class="hidden">
-    <div class="card">
-        <strong>1. サービスを選択</strong>
-        <select id="service-type">
-            <option value="洗濯代行">👕 洗濯代行</option>
-            <option value="予約代行">📞 予約代行</option>
-            <option value="並び代行">🚶 並び代行</option>
-        </select>
-    </div>
-    <div class="card">
-        <strong>2. 依頼内容の詳細</strong>
-        <textarea id="order-notes" placeholder="場所、時間、指示を入力"></textarea>
-    </div>
-    <div class="terms">
-        <label><input type="checkbox" id="terms-checkbox" onchange="toggleButton()"> 利用規約に同意</label>
-    </div>
-    <button id="order-button" onclick="submitOrder()" disabled>依頼を確定する</button>
-    <button onclick="location.reload()" style="background:none; color:gray; font-size:12px;">ログアウト</button>
+<div id="view-client" class="card hidden">
+    <h3>依頼フォーム</h3>
+    <select id="service-type">
+        <option value="買い物代行">買い物代行</option>
+        <option value="洗濯・クリーニング代行">洗濯・クリーニング代行</option>
+        <option value="その他">その他</option>
+    </select>
+    <textarea id="service-notes" rows="4" placeholder="内容を入力してください"></textarea>
+    <button id="btn-order">依頼を送信する</button>
+    <button onclick="logout()" style="background:#666; font-size:14px;">ログアウト</button>
 </div>
 
-<div id="view-admin" class="hidden">
-    <div class="card" style="background: #e3f2fd;">
-        <h2 style="color:#1976d2;">🛠 管理者パネル（依頼一覧）</h2>
-        <div id="admin-order-list">読み込み中...</div>
-        <button onclick="location.reload()" style="background:#333;">ログアウト</button>
-    </div>
+<div id="view-admin" class="card hidden">
+    <h3>管理者パネル（届いた依頼）</h3>
+    <div id="order-list">読み込み中...</div>
+    <button onclick="logout()" style="background:#666; margin-top:20px;">ログアウト</button>
 </div>
 
 <script>
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    let currentUser = null;
+    // ★★★ 【ここだけ書き換えてください】 ★★★
+    const SUPABASE_URL = "https://kvpbulqigitkhhnlttvj.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV"; // ←ここにSupabaseの一番上のキーを貼る
+    const ADMIN_EMAIL  = "shigeme117@yahoo.co.jp";
+    // ★★★ 【設定ここまで】 ★★★
 
-    function toggleButton() {
-        document.getElementById('order-button').disabled = !document.getElementById('terms-checkbox').checked;
-    }
+    const supabase = lib.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function handleAuth() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+    document.getElementById('btn-auth').addEventListener('click', async () => {
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        
         if (error) {
-            const { data: sData, error: sError } = await supabase.auth.signUp({ email, password });
-            if (sError) return alert("エラー: " + sError.message);
-            alert("登録しました。メールを確認して承認後に再ログインしてください。");
-            return;
-        }
-        currentUser = data.user;
-        showView();
+            const { error: sError } = await supabase.auth.signUp({ email, password });
+            if (sError) alert("失敗: " + sError.message);
+            else alert("登録しました。もう一度ログインしてください");
+        } else { checkUser(); }
+    });
+
+    async function checkUser() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { showView('view-auth'); return; }
+        if (user.email === ADMIN_EMAIL) { showView('view-admin'); loadOrders(); }
+        else { showView('view-client'); }
     }
 
-    function showView() {
-        document.getElementById('view-auth').classList.add('hidden');
-        if (currentUser.email === ADMIN_EMAIL) {
-            document.getElementById('view-admin').classList.remove('hidden');
-            fetchOrders();
-        } else {
-            document.getElementById('view-user').classList.remove('hidden');
-        }
+    function showView(id) {
+        ['view-auth', 'view-client', 'view-admin'].forEach(v => document.getElementById(v).classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
     }
 
-    async function submitOrder() {
+    document.getElementById('btn-order').addEventListener('click', async () => {
         const service = document.getElementById('service-type').value;
-        const notes = document.getElementById('order-notes').value;
+        const notes = document.getElementById('service-notes').value;
         const { error } = await supabase.from('orders').insert([{ service, notes }]);
-        if (error) alert("失敗: " + error.message);
-        else alert("依頼を送信しました！");
+        if (error) alert("送信失敗: " + error.message);
+        else alert("送信完了！");
+    });
+
+    async function loadOrders() {
+        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        const list = document.getElementById('order-list');
+        if (error) list.innerHTML = "エラー: " + error.message;
+        else if (data.length === 0) list.innerHTML = "依頼はありません";
+        else list.innerHTML = data.map(o => `<div class="order-item"><strong>${o.service}</strong><br>${o.notes}<br><small>${new Date(o.created_at).toLocaleString()}</small></div>`).join('');
     }
 
-    async function fetchOrders() {
-        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-        const list = document.getElementById('admin-order-list');
-        if (error) return list.innerText = "エラー";
-        list.innerHTML = data.map(o => `
-            <div class="order-item">
-                <strong>${o.service}</strong><br>${o.notes}<br>
-                <small>${new Date(o.created_at).toLocaleString()}</small>
-            </div>
-        `).join('') || "依頼なし";
-    }
+    async function logout() { await supabase.auth.signOut(); location.reload(); }
+    checkUser();
 </script>
 </body>
 </html>
