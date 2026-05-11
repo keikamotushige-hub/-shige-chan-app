@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>お助け代行サービス</title>
+    <title>Shige-chan Proxy Service</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; line-height: 1.6; }
@@ -41,18 +41,15 @@
 </div>
 
 <div id="view-admin" class="card hidden">
-    <h3>管理者パネル（届いた依頼）</h3>
+    <h3>管理者パネル</h3>
     <div id="order-list">読み込み中...</div>
     <button onclick="logout()" style="background:#666; margin-top:20px;">ログアウト</button>
 </div>
 
 <script>
-    // ★★★ 【ここだけ書き換えてください】 ★★★
-     const SUPABASE_URL = "https://kvpbulqigitkhhnlttvj.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYz";
+    const SUPABASE_URL = "https://kvpbulqigitkhhnlttvj.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_klr1zmyhrInG9eJspcVI21A_GDHwoYz";
     const ADMIN_EMAIL  = "shigeme117@yahoo.co.jp";
-   
-    // ★★★ 【設定ここまで】 ★★★
 
     const supabase = lib.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -63,7 +60,7 @@
         if (error) {
             const { error: sError } = await supabase.auth.signUp({ email, password });
             if (sError) alert("失敗: " + sError.message);
-            else alert("登録しました。もう一度ログインしてください");
+            else alert("登録完了！もう一度ログインしてください");
         } else { checkUser(); }
     });
 
@@ -75,8 +72,12 @@
     }
 
     function showView(id) {
-        ['view-auth', 'view-client', 'view-admin'].forEach(v => document.getElementById(v).classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
+        ['view-auth', 'view-client', 'view-admin'].forEach(v => {
+            const el = document.getElementById(v);
+            if (el) el.classList.add('hidden');
+        });
+        const target = document.getElementById(id);
+        if (target) target.classList.remove('hidden');
     }
 
     document.getElementById('btn-order').addEventListener('click', async () => {
@@ -91,7 +92,7 @@
         const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         const list = document.getElementById('order-list');
         if (error) list.innerHTML = "エラー: " + error.message;
-        else if (data.length === 0) list.innerHTML = "依頼はありません";
+        else if (data.length === 0) list.innerHTML = "現在、依頼はありません。";
         else list.innerHTML = data.map(o => `<div class="order-item"><strong>${o.service}</strong><br>${o.notes}<br><small>${new Date(o.created_at).toLocaleString()}</small></div>`).join('');
     }
 
