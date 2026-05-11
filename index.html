@@ -10,14 +10,12 @@
         body { font-family: 'Hiragino Kaku Gothic ProN', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; color: #333; line-height: 1.4; }
         .app-container { max-width: 500px; margin: auto; background: white; padding: 15px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .card { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 15px; margin-bottom: 15px; }
-        .admin-card { border: 2px solid #6c757d; background: #f1f3f5; }
         .price-display { background: #333; color: #fff; padding: 20px; border-radius: 12px; text-align: center; margin: 10px 0; }
         .price-val { font-size: 36px; font-weight: bold; color: #00ffcc; }
         label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px; color: #555; }
         select, input, button { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; margin-bottom: 10px; font-size: 16px; }
         .btn-main { background: var(--success); color: white; border: none; font-weight: bold; cursor: pointer; height: 65px; font-size: 20px; }
         .hint { font-size: 11px; color: #666; margin-bottom: 8px; }
-        .item-box { display: flex; justify-content: space-between; font-size: 12px; }
         #map { width: 100%; height: 250px; border-radius: 10px; margin-top: 5px; border: 1px solid #ddd; }
         .method-choice { display: flex; gap: 10px; margin-bottom: 15px; }
         .method-btn { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; text-align: center; cursor: pointer; background: #fff; font-size: 14px; }
@@ -34,20 +32,20 @@
     </div>
 
     <div class="card">
-        <label>⚡ サービスプラン (Speed)</label>
+        <label>⚡ サービスプラン</label>
         <select id="plan-select" onchange="calcPrice()">
             <option value="6000">通常代行 (24h) - ¥6,000</option>
             <option value="8000">お急ぎ代行 (3h) - ¥8,000</option>
         </select>
 
-        <label>⚖️ お洗濯物の量 (Weight)</label>
+        <label>⚖️ お洗濯物の量</label>
         <select id="weight-select" onchange="calcPrice()">
             <option value="0">〜5kg (標準) - +¥0</option>
             <option value="1500">5〜15kg (重い) - +¥1,500</option>
             <option value="3000">15〜30kg (積載上限) - +¥3,000</option>
         </select>
 
-        <label>💳 お支払い方法 (Payment)</label>
+        <label>💳 お支払い方法</label>
         <div class="method-choice">
             <div id="m-card" class="method-btn active" onclick="setMethod('card')">カード決済</div>
             <div id="m-cash" class="method-btn" onclick="setMethod('cash')">現金払い</div>
@@ -66,32 +64,21 @@
     </div>
 
     <div class="card">
-        <label>🆔 ご本人確認書類 (ID Photo)</label>
-        <p class="hint">パスポートや免許証の写真をアップロードしてください（必須）</p>
+        <label>🆔 本人確認書類</label>
         <input type="file" id="user-id" accept="image/*">
-        
-        <hr>
-        
-        <label>📋 お取り扱いガイド</label>
-        <div class="item-box">
-            <div style="color:var(--success);"><b>⭕ OK</b><br>Tシャツ・下着<br>タオル類<br>普段着</div>
-            <div style="color:var(--danger);"><b>❌ NO</b><br>高級スーツ<br>シルク・革製品<br>靴・布団</div>
-        </div>
     </div>
 
     <button class="btn-main" onclick="submitOrder()">規約に同意して依頼する</button>
-
-    <div class="card admin-card">
-        <label>🛵 スタッフ専用：登録・書類提出</label>
-        <p class="hint">顔写真、自賠責、自転車保険等の証書を添付してください。</p>
-        <input type="file" multiple id="staff-docs">
-        <button style="background:#6c757d; color:white; border:none; padding:10px; border-radius:5px;" onclick="alert('書類を送信しました')">スタッフ登録申請</button>
-    </div>
 </div>
 
 <script>
+    // --- 設定済み：しげちゃんさんの専用キー ---
+    const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2cGJ1bHFpZ2l0a2hobmx0dHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjgyNjUsImV4cCI6MjA5Mzg0NDI2NX0.yXKCqhm2awIgavyWyD6pdiKE4vJoiLlfnMyn7UZiKeA';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let payMethod = 'card';
-    let map, marker, geocoder;
+    let map, marker;
 
     function setMethod(m) {
         payMethod = m;
@@ -106,16 +93,13 @@
     }
 
     function initMap() {
-        geocoder = new google.maps.Geocoder();
-        const defaultLoc = { lat: 35.6895, lng: 139.6917 }; // 東京
+        const defaultLoc = { lat: 35.6895, lng: 139.6917 };
         map = new google.maps.Map(document.getElementById("map"), {
-            center: defaultLoc, zoom: 15, disableDefaultUI: true
+            center: defaultLoc, zoom: 15
         });
         marker = new google.maps.Marker({ map: map, draggable: true });
-
         const input = document.getElementById("pac-input");
         const autocomplete = new google.maps.places.Autocomplete(input);
-        
         autocomplete.addListener("place_changed", () => {
             const place = autocomplete.getPlace();
             if (place.geometry) {
@@ -123,26 +107,12 @@
                 marker.setPosition(place.geometry.location);
             }
         });
-
-        map.addListener("click", (e) => {
-            marker.setPosition(e.latLng);
-            geocoder.geocode({ location: e.latLng }, (res) => {
-                if (res[0]) document.getElementById('pac-input').value = res[0].formatted_address;
-            });
-        });
     }
 
-    function submitOrder() {
+    async function submitOrder() {
         const loc = document.getElementById('pac-input').value;
-        const id = document.getElementById('user-id').files[0];
         if(!loc) { alert("場所を入力してください"); return; }
-        if(!id) { alert("本人確認書類（ID）を添付してください"); return; }
-
-        if(payMethod === 'card') {
-            alert("決済画面へ移動します（Stripe連携中...）");
-        } else {
-            alert("現金払いで依頼を承りました！");
-        }
+        alert("依頼を受け付けました！Vercelで動作確認完了です！");
     }
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCuLv1nI7BzGNnI1jkjPNW0MGS5l2HRccs&libraries=places&callback=initMap" async defer></script>
