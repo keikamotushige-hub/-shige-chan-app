@@ -3,120 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>しげちゃん代行 - 統合システム</title>
+    <title>しげちゃんランドリー - 統合業務システム</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
-        :root { --primary: #007bff; --admin: #dc3545; --staff: #28a745; --bg: #f0f2f5; }
+        :root { --primary: #007bff; --admin: #dc3545; --staff: #28a745; --bg: #f4f7f9; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        .container { max-width: 600px; margin: auto; background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .view-section { display: none; }
+        .app-container { max-width: 600px; margin: auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .nav-header { background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .view-section { display: none; padding: 20px; }
         .view-section.active { display: block; }
-        .card { border: 1px solid #ddd; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: #fff; }
-        button { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .btn-order { background: var(--primary); color: white; font-size: 18px; height: 60px; }
-        #map { width: 100%; height: 300px; border-radius: 10px; margin-top: 10px; border: 1px solid #ccc; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .chat-box { height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 10px; background: #fff; margin-bottom: 10px; font-size: 13px; }
-        .msg { margin-bottom: 5px; padding: 5px 10px; border-radius: 5px; background: #e9ecef; width: fit-content; }
+        .card { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 18px; margin-top: 10px; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-auth { background: #555; color: white; padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; }
+        #map { width: 100%; height: 250px; border-radius: 10px; margin-top: 10px; border: 1px solid #ccc; }
+        .chat-box { height: 150px; overflow-y: auto; border: 1px solid #eee; background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 8px; font-size: 13px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h2 id="view-title" style="margin:0; font-size:18px;">🧺 お客さま注文</h2>
-        <button onclick="changeMode()" style="width:auto; font-size:12px; background:#6c757d; color:white;">モード切替</button>
+<div class="app-container">
+    <div class="nav-header">
+        <span id="mode-text">🧺 お客さま注文画面</span>
+        <button id="login-toggle-btn" class="btn-auth" onclick="toggleLoginView()">関係者ログイン</button>
     </div>
 
-    <div id="user-view" class="view-section active">
+    <div id="view-user" class="view-section active">
+        <h3>🚀 洗濯代行のご依頼</h3>
         <div class="card">
-            <label>🏨 ホテル・集荷場所を検索</label>
+            <label>👤 お名前</label>
+            <input type="text" id="user-name" placeholder="例：鈴木 しげお">
+            <label>📞 電話番号</label>
+            <input type="tel" id="user-phone" placeholder="例：09012345678">
+            <label>🏨 集荷場所 (ホテル名など)</label>
             <input type="text" id="pac-input" placeholder="ホテル名を入力してください">
-            <div id="map">地図を読み込み中...</div>
+            <div id="map">地図読み込み中...</div>
         </div>
         <div class="card">
             <label>💬 配達員とチャット</label>
-            <div class="chat-box" id="chat-user"></div>
+            <div class="chat-box" id="chat-u"></div>
             <div style="display:flex; gap:5px;">
-                <input type="text" id="input-user" placeholder="メッセージを送る">
-                <button onclick="sendMsg('user')" style="width:80px; background:var(--primary); color:white;">送信</button>
+                <input type="text" id="msg-u" placeholder="メッセージ入力">
+                <button onclick="sendChat('u')" style="width:70px; background:#eee; border:1px solid #ccc; border-radius:8px;">送信</button>
             </div>
         </div>
-        <button class="btn-order" onclick="alert('注文を送信しました')">規約に同意して依頼する</button>
+        <button class="btn btn-main" onclick="submitOrder()">規約に同意して依頼する</button>
     </div>
 
-    <div id="staff-view" class="view-section">
-        <div class="card" style="border-top: 4px solid var(--staff);">
-            <h3>🛵 配達員専用パネル</h3>
-            <div id="order-list">新しい依頼を待機中...</div>
+    <div id="view-login" class="view-section">
+        <div style="padding:40px; text-align:center;">
+            <h3>🔐 関係者サインイン</h3>
+            <input type="text" id="auth-id" placeholder="ユーザーID">
+            <input type="password" id="auth-pw" placeholder="パスワード">
+            <button class="btn btn-main" onclick="doLogin()">ログイン</button>
+            <button class="btn" style="background:#eee;" onclick="cancelLogin()">キャンセル</button>
         </div>
+    </div>
+
+    <div id="view-staff" class="view-section">
+        <h3 style="color:var(--staff);">🛵 配達員パネル</h3>
+        <div class="card" id="orders">現在、新しい依頼はありません。</div>
         <div class="card">
             <label>💬 お客さまとチャット</label>
-            <div class="chat-box" id="chat-staff"></div>
+            <div class="chat-box" id="chat-s"></div>
             <div style="display:flex; gap:5px;">
-                <input type="text" id="input-staff" placeholder="返信する">
-                <button onclick="sendMsg('staff')" style="width:80px; background:var(--staff); color:white;">送信</button>
+                <input type="text" id="msg-s" placeholder="お客さまへ返信">
+                <button onclick="sendChat('s')" style="width:70px; background:var(--staff); color:white; border-radius:8px; border:none;">送信</button>
             </div>
         </div>
+        <button class="btn" style="background:#eee;" onclick="doLogout()">ログアウト</button>
     </div>
 
-    <div id="admin-view" class="view-section">
-        <div class="card" style="border-top: 4px solid var(--admin);">
-            <h3>👑 総括管理者パネル</h3>
-            <p>売上確認・全スタッフ管理</p>
-            <button style="background:#333; color:white;">全データをダウンロード</button>
+    <div id="view-admin" class="view-section">
+        <h3 style="color:var(--admin);">👑 管理者総括パネル</h3>
+        <div class="card">
+            <p>本日の売上: ¥0</p>
+            <p>全注文履歴・スタッフ名簿の管理が可能です。</p>
         </div>
+        <button class="btn" style="background:#eee;" onclick="doLogout()">ログアウト</button>
     </div>
 </div>
 
 <script>
-    // 全てのキーを組み込み済みです
-    const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2cGJ1bHFpZ2l0a2hobmx0dHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjgyNjUsImV4cCI6MjA5Mzg0NDI2NX0.yXKCqhm2awIgavyWyD6pdiKE4vJoiLlfnMyn7UZiKeA';
+    // --- 🔑 【重要】ここにしげちゃんさんの情報を入れてください ---
+    const SUPABASE_URL = 'https://kvpbulqigitkhhnlttvj.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2cGJ1bHFpZ2l0a2hobmx0dHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjgyNjUsImV4cCI6MjA5Mzg0NDI2NX0.yXKCqhm2awIgavyWyD6pdiKE4vJoiLlfnMyn7UZiKeA　';
+    // --------------------------------------------------------
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    function changeMode() {
-        const pass = prompt("パスワードを入力\n(スタッフ:1111 / 管理者:9999)");
-        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-        if(pass === "1111") {
-            document.getElementById('staff-view').classList.add('active');
-            document.getElementById('view-title').innerText = "🛵 配達員モード";
-        } else if(pass === "9999") {
-            document.getElementById('admin-view').classList.add('active');
-            document.getElementById('view-title').innerText = "👑 管理者モード";
+    function toggleLoginView() { switchView('view-login'); }
+    function cancelLogin() { switchView('view-user'); }
+
+    async function doLogin() {
+        const id = document.getElementById('auth-id').value;
+        const pw = document.getElementById('auth-pw').value;
+        const { data, error } = await supabase.from('users').select('*').eq('user_id', id).eq('password', pw).single();
+
+        if (error || !data) { alert("IDまたはパスワードが正しくありません。"); return; }
+        
+        if (data.role === 'admin') {
+            switchView('view-admin');
+            document.getElementById('mode-text').innerText = "👑 管理者モード";
         } else {
-            document.getElementById('user-view').classList.add('active');
-            document.getElementById('view-title').innerText = "🧺 お客さま注文";
+            switchView('view-staff');
+            document.getElementById('mode-text').innerText = "🛵 配達員モード";
         }
+        document.getElementById('login-toggle-btn').style.display = 'none';
     }
 
-    function sendMsg(role) {
-        const input = document.getElementById('input-' + role);
-        const boxUser = document.getElementById('chat-user');
-        const boxStaff = document.getElementById('chat-staff');
+    function doLogout() {
+        switchView('view-user');
+        document.getElementById('mode-text').innerText = "🧺 お客さま注文画面";
+        document.getElementById('login-toggle-btn').style.display = 'block';
+    }
+
+    function switchView(id) {
+        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function sendChat(role) {
+        const input = document.getElementById('msg-' + role);
+        const boxes = [document.getElementById('chat-u'), document.getElementById('chat-s')];
         if(!input.value) return;
-        const msgHtml = `<div class="msg"><b>${role === 'user' ? '客' : '配'}:</b> ${input.value}</div>`;
-        boxUser.innerHTML += msgHtml;
-        boxStaff.innerHTML += msgHtml;
+        const html = `<div><b>${role==='u'?'客':'スタッフ'}:</b> ${input.value}</div>`;
+        boxes.forEach(b => { b.innerHTML += html; b.scrollTop = b.scrollHeight; });
         input.value = "";
-        boxUser.scrollTop = boxUser.scrollHeight;
     }
 
     function initMap() {
-        const map = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: 35.891, lng: 139.791 }, zoom: 15
-        });
-        const input = document.getElementById("pac-input");
-        const autocomplete = new google.maps.places.Autocomplete(input);
-        autocomplete.bindTo("bounds", map);
+        const map = new google.maps.Map(document.getElementById("map"), { center: { lat: 35.891, lng: 139.791 }, zoom: 15 });
+        const auto = new google.maps.places.Autocomplete(document.getElementById("pac-input"));
+        auto.bindTo("bounds", map);
         const marker = new google.maps.Marker({ map: map });
-        autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-                map.setCenter(place.geometry.location);
-                marker.setPosition(place.geometry.location);
-            }
+        auto.addListener("place_changed", () => {
+            const p = auto.getPlace();
+            if (p.geometry) { map.setCenter(p.geometry.location); marker.setPosition(p.geometry.location); }
         });
+    }
+
+    function submitOrder() {
+        const n = document.getElementById('user-name').value;
+        if(!n) { alert("お名前を入力してください"); return; }
+        alert(n + "様、ご依頼を承りました！");
     }
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCuLv1nI7BzGNnI1jkjPNW0MGS5l2HRccs&libraries=places&callback=initMap" async defer></script>
