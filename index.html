@@ -53,8 +53,10 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://kvpbuigigstkhhsitrvj.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2cGJ1aWdpZ3N0a2hoc2l0cnZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTE4Njk5MzksImV4cCI6MjAyNzQ0NTkzOX0.6F_jGdwXzV...'; // ここは自分のキーに直してください
+        // *** ここに自分の情報を入れる ***
+        const SUPABASE_URL = 'https://kvpbuigigstkhhsitrvj.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_kErlW2nyXnGFeJopcV124A_GDnWoYzV';
+
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function handleAuth() {
@@ -62,8 +64,9 @@
             const password = document.getElementById('password').value;
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
-                await supabaseClient.auth.signUp({ email, password });
-                alert("確認メールを送りました。承認してください。");
+                const { error: signUpError } = await supabaseClient.auth.signUp({ email, password });
+                if (signUpError) alert("エラー: " + signUpError.message);
+                else alert("確認メールを送りました。承認してください。");
             } else {
                 getUserProfile(data.user);
             }
@@ -72,6 +75,7 @@
         async function getUserProfile(user) {
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
             document.getElementById('auth-ui').style.display = 'none';
+            if (!profile) return;
             if (profile.role === 'admin') {
                 document.getElementById('admin-ui').style.display = 'block';
             } else if (profile.kyc_status === 'none') {
@@ -86,12 +90,19 @@
             const fileInput = document.getElementById('id-photo');
             const file = fileInput.files[0];
             if (!file) return alert("写真を選択してください");
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const fileName = `id-${user.id}-${Date.now()}`;
-            await supabaseClient.storage.from('id-docs').upload(fileName, file);
-            await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
-            alert("申請しました！");
-            location.reload();
+            
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                const fileName = `id-${user.id}-${Date.now()}`;
+                
+                await supabaseClient.storage.from('id-docs').upload(fileName, file);
+                await supabaseClient.from('profiles').update({ kyc_status: 'pending' }).eq('id', user.id);
+                
+                alert("申請しました！");
+                location.reload();
+            } catch (e) {
+                alert("失敗しました: " + e.message);
+            }
         }
     </script>
 </body>
